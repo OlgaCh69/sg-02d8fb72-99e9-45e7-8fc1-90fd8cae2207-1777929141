@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink, FileText, Globe, BookOpen } from "lucide-react";
+import { Search, ExternalLink, FileText, Globe, BookOpen, Download } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -60,6 +60,35 @@ export default function ConversationsPage() {
     }
   };
 
+  const exportToCSV = () => {
+    const headers = ["Visitor ID", "Channel", "Page URL", "Status", "Device", "Browser", "Started At", "Ended At", "Message Count", "Handover Requested", "Trigger Type"];
+    const csvData = conversations.map(conv => [
+      conv.visitor_id,
+      conv.channel || "website",
+      conv.page_url || "",
+      conv.status,
+      conv.device || "",
+      conv.browser || "",
+      new Date(conv.started_at).toLocaleString(),
+      conv.ended_at ? new Date(conv.ended_at).toLocaleString() : "",
+      conv.messages.length,
+      conv.handover_requested ? "Yes" : "No",
+      conv.trigger_type || "manual",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `conversations-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+  };
+
   const filteredConversations = conversations.filter((conv) =>
     conv.visitor_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.page_url?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -105,9 +134,15 @@ export default function ConversationsPage() {
     <AdminLayout>
       <SEO title="Conversations - AI Assistant Admin" />
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Conversations</h1>
-          <p className="text-slate-600 mt-1">View and manage all chat conversations</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Conversations</h1>
+            <p className="text-slate-600 mt-1">View and manage all chat conversations</p>
+          </div>
+          <Button onClick={exportToCSV} className="gap-2">
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
         </div>
 
         <div className="flex gap-4">
@@ -131,6 +166,9 @@ export default function ConversationsPage() {
                     <CardTitle className="text-lg flex items-center gap-2">
                       Visitor: {conversation.visitor_id.slice(0, 12)}...
                       <Badge className={getStatusColor(conversation.status)}>{conversation.status}</Badge>
+                      {conversation.handover_requested && (
+                        <Badge className="bg-orange-100 text-orange-800">Handover Requested</Badge>
+                      )}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       {conversation.page_url && (
