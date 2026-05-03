@@ -59,7 +59,13 @@ export async function findOrCreateUserProfile(params: {
         .update(updates)
         .eq("id", existingProfile.id);
 
-      return { ...existingProfile, ...updates };
+      return { 
+        ...existingProfile, 
+        ...updates,
+        lead_status: existingProfile.lead_status as "hot" | "warm" | "cold" | "none",
+        preferences: existingProfile.preferences as Record<string, any>,
+        tags: existingProfile.tags as string[]
+      };
     }
 
     // Create new profile
@@ -80,7 +86,12 @@ export async function findOrCreateUserProfile(params: {
       return null;
     }
 
-    return newProfile;
+    return newProfile ? {
+      ...newProfile,
+      lead_status: newProfile.lead_status as "hot" | "warm" | "cold" | "none",
+      preferences: newProfile.preferences as Record<string, any>,
+      tags: newProfile.tags as string[]
+    } : null;
   } catch (error) {
     console.error("Error in findOrCreateUserProfile:", error);
     return null;
@@ -122,10 +133,23 @@ export async function getUserMemory(userProfileId: string): Promise<{
       attributesMap[attr.attribute_key] = attr.attribute_value || "";
     });
 
+    const formattedSummaries: ConversationMemory[] = (summaries || []).map(s => ({
+      summary: s.summary,
+      intent: s.intent || undefined,
+      key_points: (s.key_points as string[]) || [],
+      extracted_data: (s.extracted_data as Record<string, any>) || {},
+      sentiment: (s.sentiment as "positive" | "neutral" | "negative") || undefined,
+    }));
+
     return {
-      recentSummaries: summaries || [],
+      recentSummaries: formattedSummaries,
       userAttributes: attributesMap,
-      profile,
+      profile: profile ? {
+        ...profile,
+        lead_status: profile.lead_status as "hot" | "warm" | "cold" | "none",
+        preferences: profile.preferences as Record<string, any>,
+        tags: profile.tags as string[]
+      } : null,
     };
   } catch (error) {
     console.error("Error getting user memory:", error);

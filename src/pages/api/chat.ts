@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "@/integrations/supabase/client";
+import { findOrCreateUserProfile, getUserMemory, buildMemoryContext } from "@/services/memoryService";
 
 export default async function handler(
   req: NextApiRequest,
@@ -14,6 +15,25 @@ export default async function handler(
     const lowerMessage = message.toLowerCase();
     const questionWords = lowerMessage.split(" ").filter((word: string) => word.length > 3);
 
+    // 1. AI Memory Context
+    const profile = await findOrCreateUserProfile({ visitorId });
+    let memoryContext = "";
+    let userName = "";
+
+    if (profile) {
+      // Link conversation to profile
+      await supabase
+        .from("conversations")
+        .update({ user_profile_id: profile.id })
+        .eq("id", conversationId);
+
+      const memory = await getUserMemory(profile.id);
+      memoryContext = buildMemoryContext(memory);
+      if (profile.full_name) {
+        userName = profile.full_name;
+      }
+    }
+
     // Default uncertainty fallback
     let response = "I'm not exactly sure about that. Would you like me to collect your contact details so our human team can reach out to you with a proper answer?";
     let shouldCaptureLead = true; 
@@ -21,7 +41,7 @@ export default async function handler(
     let sourceUrl = "";
     let sourceType = "";
 
-    // 1. Check Knowledge Base first
+    // 2. Check Knowledge Base first
     const { data: knowledgeBase } = await supabase
       .from("knowledge_base")
       .select("*")
@@ -45,7 +65,7 @@ export default async function handler(
       }
     }
 
-    // 2. Check approved Website Pages if no KB match
+    // 3. Check approved Website Pages if no KB match
     if (!foundAnswer && questionWords.length > 0) {
       const { data: websitePages } = await supabase
         .from("website_pages")
@@ -86,13 +106,27 @@ export default async function handler(
       }
     }
 
-    // 3. Lead intent overrides
+    // 4. Lead intent overrides
     const leadTriggers = ["pricing", "cost", "quote", "demo", "contact", "sales", "buy"];
     if (leadTriggers.some(trigger => lowerMessage.includes(trigger))) {
       shouldCaptureLead = true;
       if (!foundAnswer) {
         response = "I can definitely help you with that! Let me collect your contact details so our team can reach out immediately.";
       }
+    }
+
+    // 5. Personalize Response
+    if (userName) {
+      // Simply prefix with name to show memory is working
+      const firstName = userName.split(" ")[0];
+      if (foundAnswer && !response.startsWith(firstName)) {
+        response = `${firstName}, ${response.charAt(0).toLowerCase()}${response.slice(1)}`;
+      } else if (!foundAnswer && !response.startsWith(firstName)) {
+        response = `${firstName}, ${response.charAt(0).toLowerCase()}${response.slice(1)}`;
+      }
+    } else if (memoryContext.length > 0 && !foundAnswer) {
+      // Acknowledge returning user
+      response = `Welcome back! ${response}`;
     }
 
     return res.status(200).json({ 

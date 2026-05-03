@@ -101,12 +101,30 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
 
       if (data) {
         setConversationId(data.id);
-        const welcomeMessage = settings?.welcome_message || "Hi! How can I help you today?";
+        
+        // Check if we know this user
+        let greeting = settings?.welcome_message || "Hi! How can I help you today?";
+        try {
+          const { data: profiles } = await supabase
+            .from("user_profiles")
+            .select("full_name")
+            .eq("visitor_id", visitorId)
+            .limit(1);
+          
+          if (profiles && profiles.length > 0 && profiles[0].full_name) {
+            greeting = `Welcome back, ${profiles[0].full_name.split(' ')[0]}! How can I help you today?`;
+          } else if (profiles && profiles.length > 0) {
+            greeting = `Welcome back! How can I help you today?`;
+          }
+        } catch (e) {
+          console.error("Failed to check returning user", e);
+        }
+
         const msg: Message = {
           id: `temp_${Date.now()}`,
           conversation_id: data.id,
           role: "assistant",
-          content: welcomeMessage,
+          content: greeting,
           timestamp: new Date().toISOString(),
           source_type: null,
           source_url: null,
@@ -116,8 +134,21 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     setIsOpen(false);
+    
+    // Trigger conversation summarization for long-term memory
+    if (conversationId) {
+      try {
+        await fetch("/api/chat/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversationId, visitorId }),
+        });
+      } catch (error) {
+        console.error("Failed to trigger summarization", error);
+      }
+    }
   };
 
   const handleSendMessage = async () => {
@@ -215,6 +246,21 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         })
         .select()
         .single();
+
+      // Update AI User Profile Memory with the captured details
+      try {
+        await supabase
+          .from("user_profiles")
+          .update({
+            email: leadForm.email,
+            full_name: leadForm.name,
+            phone: leadForm.phone,
+            lead_status: "warm"
+          })
+          .eq("visitor_id", visitorId);
+      } catch (memError) {
+        console.error("Failed to update memory profile", memError);
+      }
 
       if (data) {
         setLeadCaptured(true);
