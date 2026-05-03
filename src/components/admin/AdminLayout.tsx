@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   Globe,
+  Layers,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -24,14 +25,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     await supabase.auth.signOut();
     router.push("/admin/login");
   };
-
-  const navItems = [
-    { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/admin/conversations", icon: MessageSquare, label: "Conversations" },
-    { href: "/admin/leads", icon: Users, label: "Leads" },
-    { href: "/admin/knowledge-base", icon: BookOpen, label: "Knowledge Base" },
-    { href: "/admin/settings", icon: Settings, label: "Settings" },
-  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -78,6 +71,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             >
               <Users className="h-5 w-5" />
               Leads
+            </Link>
+
+            <Link
+              href="/admin/knowledge-sources"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/knowledge-sources"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Layers className="h-5 w-5" />
+              Knowledge Sources
             </Link>
 
             <Link
