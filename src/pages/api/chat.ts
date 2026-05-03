@@ -11,33 +11,81 @@ export default async function handler(
 
   try {
     const { message, conversationId, visitorId } = req.body;
+    const lowerMessage = message.toLowerCase();
+    const questionWords = lowerMessage.split(" ").filter((word: string) => word.length > 3);
 
+    // Default uncertainty fallback
+    let response = "I'm not exactly sure about that. Would you like me to collect your contact details so our human team can reach out to you with a proper answer?";
+    let shouldCaptureLead = true; 
+    let foundAnswer = false;
+
+    // 1. Check Knowledge Base first
     const { data: knowledgeBase } = await supabase
       .from("knowledge_base")
       .select("*")
       .eq("is_active", true);
 
-    let response = "I'm not sure about that. Let me connect you with a human agent who can help.";
-    let shouldCaptureLead = false;
-
     if (knowledgeBase && knowledgeBase.length > 0) {
-      const lowerMessage = message.toLowerCase();
-      
       for (const entry of knowledgeBase) {
-        const questionWords = entry.question.toLowerCase().split(" ");
-        const matchCount = questionWords.filter(word => 
+        const entryWords = entry.question.toLowerCase().split(" ");
+        const matchCount = entryWords.filter((word: string) => 
           lowerMessage.includes(word) && word.length > 3
         ).length;
 
-        if (matchCount >= 2) {
+        if (matchCount >= 2 || lowerMessage.includes(entry.question.toLowerCase())) {
           response = entry.answer;
+          foundAnswer = true;
+          shouldCaptureLead = false;
           break;
         }
       }
+    }
 
-      const leadTriggers = ["pricing", "cost", "quote", "demo", "contact", "sales", "buy"];
-      if (leadTriggers.some(trigger => lowerMessage.includes(trigger))) {
-        shouldCaptureLead = true;
+    // 2. Check approved Website Pages if no KB match
+    if (!foundAnswer && questionWords.length > 0) {
+      const { data: websitePages } = await supabase
+        .from("website_pages")
+        .select("title, content, url")
+        .eq("status", "approved");
+
+      if (websitePages && websitePages.length > 0) {
+        let bestScore = 0;
+        let bestSnippet = "";
+        let sourceUrl = "";
+
+        for (const page of websitePages) {
+          const contentLower = page.content.toLowerCase();
+          let score = 0;
+          for (const word of questionWords) {
+            if (contentLower.includes(word)) score++;
+          }
+
+          if (score > bestScore && score >= 2) {
+            bestScore = score;
+            // Extract a relevant snippet around the match
+            const firstWordMatch = questionWords.find(w => contentLower.includes(w)) || questionWords[0];
+            const idx = contentLower.indexOf(firstWordMatch);
+            const start = Math.max(0, idx - 50);
+            const end = Math.min(page.content.length, idx + 250);
+            bestSnippet = page.content.substring(start, end).trim();
+            sourceUrl = page.url;
+          }
+        }
+
+        if (bestScore > 0) {
+          response = `Based on our website: "...${bestSnippet}..."\n\nSource: ${sourceUrl}`;
+          foundAnswer = true;
+          shouldCaptureLead = false;
+        }
+      }
+    }
+
+    // 3. Lead intent overrides
+    const leadTriggers = ["pricing", "cost", "quote", "demo", "contact", "sales", "buy"];
+    if (leadTriggers.some(trigger => lowerMessage.includes(trigger))) {
+      shouldCaptureLead = true;
+      if (!foundAnswer) {
+        response = "I can definitely help you with that! Let me collect your contact details so our team can reach out immediately.";
       }
     }
 
