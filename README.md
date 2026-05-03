@@ -19,13 +19,42 @@ A complete AI-powered chat widget system with lead capture, CRM integration, and
 
 **URL:** `/admin/login`
 
-**Default Credentials:**
+**Demo Account (Try it now!):**
+- Email: `demo@example.com`
+- Password: `demo123`
+
+**Default Admin Account:**
 - Email: `admin@example.com`
 - Password: `admin123`
 
+**First Time Business User?**
+- Go to `/admin/register` to create your account
+- Fill in your business details (company name, website, industry)
+- Your account is automatically set up with admin privileges
+- Widget settings are initialized for you
+
 ⚠️ **IMPORTANT:** Change your password immediately after first login!
 
-### 2. Configure Knowledge Base
+### 2. Register Your Business
+
+**URL:** `/admin/register`
+
+**What you'll need:**
+- Full name
+- Email address
+- Password (min 6 characters)
+- Company name (required)
+- Phone number (optional)
+- Website URL (optional)
+- Industry (optional)
+
+Once registered, you'll automatically:
+- Get admin access to the dashboard
+- Have widget settings initialized
+- Be able to customize your AI assistant
+- Start capturing leads immediately
+
+### 3. Configure Knowledge Base
 
 1. Go to Admin Panel → Knowledge Base
 2. Add questions and answers your AI should know
@@ -38,7 +67,7 @@ Sample questions to add:
 - "Do you offer support?"
 - "Can I get a demo?"
 
-### 3. Configure CRM Integration (Optional)
+### 4. Configure CRM Integration (Optional)
 
 1. Go to Admin Panel → Settings → CRM Integration
 2. Select your CRM provider
@@ -52,7 +81,7 @@ Supported CRMs:
 - Pipedrive
 - Custom Webhook
 
-### 4. Customize Widget Settings
+### 5. Customize Widget Settings
 
 1. Go to Admin Panel → Settings → Widget Settings
 2. Customize welcome message
@@ -60,7 +89,7 @@ Supported CRMs:
 4. Configure lead capture behavior
 5. Enable/disable the widget
 
-### 5. Embed on Your Website
+### 6. Embed on Your Website
 
 Add this script tag before the closing `</body>` tag on your website:
 
