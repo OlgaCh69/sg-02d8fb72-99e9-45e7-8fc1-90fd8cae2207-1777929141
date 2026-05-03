@@ -17,7 +17,7 @@ import {
   Globe,
   FileText,
   Package,
-  Database,
+  Database as DatabaseIcon,
   CheckCircle,
   Clock,
   XCircle,
@@ -153,6 +153,9 @@ export default function KnowledgeSourcesPage() {
         content: newDoc.content,
         status: "pending",
         uploaded_by: session?.user.id,
+        file_name: `${newDoc.title.replace(/\s+/g, "_").toLowerCase()}.txt`,
+        file_type: "text/plain",
+        file_url: ""
       });
 
       setNewDoc({ title: "", content: "" });
@@ -184,17 +187,12 @@ export default function KnowledgeSourcesPage() {
     if (!newProduct.name || !newProduct.description) return;
 
     try {
-      const features = newProduct.features
-        .split("\n")
-        .filter(f => f.trim())
-        .map(f => f.trim());
-
       await supabase.from("products").insert({
         name: newProduct.name,
         description: newProduct.description,
         price: newProduct.price || null,
         category: newProduct.category || null,
-        features: features,
+        features: newProduct.features,
         is_active: true,
       });
 
@@ -267,7 +265,7 @@ export default function KnowledgeSourcesPage() {
     {
       title: "CRM Integration",
       description: "Sync with your CRM system",
-      icon: Database,
+      icon: DatabaseIcon,
       color: "orange",
       stats: "Configure webhook",
       href: "/admin/settings",
@@ -381,7 +379,7 @@ export default function KnowledgeSourcesPage() {
 
                   <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                     <Badge>5</Badge>
-                    <Database className="h-5 w-5 text-orange-600" />
+                    <DatabaseIcon className="h-5 w-5 text-orange-600" />
                     <div className="flex-1">
                       <p className="font-medium">CRM Data</p>
                       <p className="text-sm text-slate-600">Customer history from your CRM</p>
