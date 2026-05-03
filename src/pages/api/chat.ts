@@ -18,6 +18,8 @@ export default async function handler(
     let response = "I'm not exactly sure about that. Would you like me to collect your contact details so our human team can reach out to you with a proper answer?";
     let shouldCaptureLead = true; 
     let foundAnswer = false;
+    let sourceUrl = "";
+    let sourceType = "";
 
     // 1. Check Knowledge Base first
     const { data: knowledgeBase } = await supabase
@@ -36,6 +38,8 @@ export default async function handler(
           response = entry.answer;
           foundAnswer = true;
           shouldCaptureLead = false;
+          sourceType = "knowledge_base";
+          sourceUrl = `FAQ: ${entry.question}`;
           break;
         }
       }
@@ -51,7 +55,7 @@ export default async function handler(
       if (websitePages && websitePages.length > 0) {
         let bestScore = 0;
         let bestSnippet = "";
-        let sourceUrl = "";
+        let bestUrl = "";
 
         for (const page of websitePages) {
           const contentLower = page.content.toLowerCase();
@@ -68,14 +72,16 @@ export default async function handler(
             const start = Math.max(0, idx - 50);
             const end = Math.min(page.content.length, idx + 250);
             bestSnippet = page.content.substring(start, end).trim();
-            sourceUrl = page.url;
+            bestUrl = page.url;
           }
         }
 
         if (bestScore > 0) {
-          response = `Based on our website: "...${bestSnippet}..."\n\nSource: ${sourceUrl}`;
+          response = `Based on our website: "...${bestSnippet}..."\n\nSource: ${bestUrl}`;
           foundAnswer = true;
           shouldCaptureLead = false;
+          sourceType = "website_page";
+          sourceUrl = bestUrl;
         }
       }
     }
@@ -91,7 +97,9 @@ export default async function handler(
 
     return res.status(200).json({ 
       response,
-      shouldCaptureLead
+      shouldCaptureLead,
+      sourceUrl,
+      sourceType
     });
   } catch (error) {
     console.error("Chat API error:", error);

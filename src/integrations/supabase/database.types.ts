@@ -222,6 +222,62 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          content: string | null
+          file_name: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          last_processed: string | null
+          metadata: Json | null
+          status: string | null
+          title: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+          word_count: number | null
+        }
+        Insert: {
+          content?: string | null
+          file_name: string
+          file_size?: number | null
+          file_type: string
+          file_url: string
+          id?: string
+          last_processed?: string | null
+          metadata?: Json | null
+          status?: string | null
+          title: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          word_count?: number | null
+        }
+        Update: {
+          content?: string | null
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          last_processed?: string | null
+          metadata?: Json | null
+          status?: string | null
+          title?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           answer: string
@@ -317,6 +373,8 @@ export type Database = {
           conversation_id: string
           id: string
           role: string
+          source_type: string | null
+          source_url: string | null
           timestamp: string | null
         }
         Insert: {
@@ -324,6 +382,8 @@ export type Database = {
           conversation_id: string
           id?: string
           role: string
+          source_type?: string | null
+          source_url?: string | null
           timestamp?: string | null
         }
         Update: {
@@ -331,6 +391,8 @@ export type Database = {
           conversation_id?: string
           id?: string
           role?: string
+          source_type?: string | null
+          source_url?: string | null
           timestamp?: string | null
         }
         Relationships: [
@@ -342,6 +404,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          features: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          metadata: Json | null
+          name: string
+          pricing: string | null
+          updated_at: string | null
+          url: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          name: string
+          pricing?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          features?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          name?: string
+          pricing?: string | null
+          updated_at?: string | null
+          url?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

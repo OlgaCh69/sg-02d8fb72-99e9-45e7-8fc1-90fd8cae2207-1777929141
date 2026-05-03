@@ -140,9 +140,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         content: inputValue,
       });
 
-      await trackEvent("message_sent", { message_length: inputValue.length });
-
-      const response = await fetch(`${apiUrl || ""}/api/chat`, {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -168,13 +166,17 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         conversation_id: conversationId,
         role: "assistant",
         content: data.response,
+        source_url: data.sourceUrl || null,
+        source_type: data.sourceType || null,
       });
 
-      if (data.shouldCaptureLead && !leadCaptured) {
+      if (data.shouldCaptureLead) {
         setShowLeadForm(true);
       }
+
+      await trackEvent("message_sent");
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Message error:", error);
       const errorMessage: Message = {
         id: `temp_error_${Date.now()}`,
         conversation_id: conversationId,
