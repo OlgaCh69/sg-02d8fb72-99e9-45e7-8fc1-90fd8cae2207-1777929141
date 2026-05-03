@@ -129,7 +129,7 @@ export default function KnowledgeSourcesPage() {
     const { data } = await supabase
       .from("documents")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("uploaded_at", { ascending: false });
     setDocuments(data || []);
   };
 
@@ -190,7 +190,7 @@ export default function KnowledgeSourcesPage() {
       await supabase.from("products").insert({
         name: newProduct.name,
         description: newProduct.description,
-        price: newProduct.price || null,
+        pricing: newProduct.price || null,
         category: newProduct.category || null,
         features: newProduct.features,
         is_active: true,
@@ -450,7 +450,7 @@ export default function KnowledgeSourcesPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-slate-600">
-                          {new Date(doc.created_at).toLocaleDateString()}
+                          {new Date(doc.uploaded_at || new Date()).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
@@ -568,7 +568,7 @@ export default function KnowledgeSourcesPage() {
                       <TableRow key={product.id}>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell>{product.category || "-"}</TableCell>
-                        <TableCell>{product.price || "-"}</TableCell>
+                        <TableCell>{product.pricing || "-"}</TableCell>
                         <TableCell>
                           <Badge className={product.is_active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-800"}>
                             {product.is_active ? "Active" : "Inactive"}
