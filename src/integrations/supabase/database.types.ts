@@ -105,6 +105,87 @@ export type Database = {
         }
         Relationships: []
       }
+      crawl_logs: {
+        Row: {
+          completed_at: string | null
+          crawl_id: string
+          created_at: string | null
+          errors: string[] | null
+          id: string
+          pages_crawled: number | null
+          pages_found: number | null
+          pages_new: number | null
+          pages_updated: number | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          crawl_id: string
+          created_at?: string | null
+          errors?: string[] | null
+          id?: string
+          pages_crawled?: number | null
+          pages_found?: number | null
+          pages_new?: number | null
+          pages_updated?: number | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          crawl_id?: string
+          created_at?: string | null
+          errors?: string[] | null
+          id?: string
+          pages_crawled?: number | null
+          pages_found?: number | null
+          pages_new?: number | null
+          pages_updated?: number | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      crawl_settings: {
+        Row: {
+          crawl_frequency: string | null
+          created_at: string | null
+          excluded_patterns: string[] | null
+          id: string
+          is_active: boolean | null
+          last_crawl_completed: string | null
+          last_crawl_started: string | null
+          max_pages: number | null
+          updated_at: string | null
+          website_url: string
+        }
+        Insert: {
+          crawl_frequency?: string | null
+          created_at?: string | null
+          excluded_patterns?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          last_crawl_completed?: string | null
+          last_crawl_started?: string | null
+          max_pages?: number | null
+          updated_at?: string | null
+          website_url: string
+        }
+        Update: {
+          crawl_frequency?: string | null
+          created_at?: string | null
+          excluded_patterns?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          last_crawl_completed?: string | null
+          last_crawl_started?: string | null
+          max_pages?: number | null
+          updated_at?: string | null
+          website_url?: string
+        }
+        Relationships: []
+      }
       crm_settings: {
         Row: {
           api_key: string | null
@@ -301,6 +382,48 @@ export type Database = {
           phone?: string | null
           updated_at?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      website_pages: {
+        Row: {
+          content: string | null
+          content_hash: string | null
+          created_at: string | null
+          id: string
+          last_crawled: string | null
+          meta_description: string | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+          url: string
+          word_count: number | null
+        }
+        Insert: {
+          content?: string | null
+          content_hash?: string | null
+          created_at?: string | null
+          id?: string
+          last_crawled?: string | null
+          meta_description?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          url: string
+          word_count?: number | null
+        }
+        Update: {
+          content?: string | null
+          content_hash?: string | null
+          created_at?: string | null
+          id?: string
+          last_crawled?: string | null
+          meta_description?: string | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+          url?: string
+          word_count?: number | null
         }
         Relationships: []
       }

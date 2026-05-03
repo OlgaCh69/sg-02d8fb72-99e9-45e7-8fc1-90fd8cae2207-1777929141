@@ -1,9 +1,17 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { LayoutDashboard, MessageSquare, Users, Book, Settings, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Users,
+  BookOpen,
+  Settings,
+  LogOut,
+  Globe,
+} from "lucide-react";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -36,23 +44,77 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
 
           <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = router.pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-indigo-50 text-indigo-700 font-medium"
-                      : "text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </Link>
-              );
-            })}
+            <Link
+              href="/admin/dashboard"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/dashboard"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <LayoutDashboard className="h-5 w-5" />
+              Dashboard
+            </Link>
+
+            <Link
+              href="/admin/conversations"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/conversations"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <MessageSquare className="h-5 w-5" />
+              Conversations
+            </Link>
+
+            <Link
+              href="/admin/leads"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/leads"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Users className="h-5 w-5" />
+              Leads
+            </Link>
+
+            <Link
+              href="/admin/knowledge-base"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/knowledge-base"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <BookOpen className="h-5 w-5" />
+              Knowledge Base
+            </Link>
+
+            <Link
+              href="/admin/website-sync"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/website-sync"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Globe className="h-5 w-5" />
+              Website Sync
+            </Link>
+
+            <Link
+              href="/admin/settings"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/settings"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Settings className="h-5 w-5" />
+              Settings
+            </Link>
           </nav>
 
           <div className="mt-auto pt-8">
