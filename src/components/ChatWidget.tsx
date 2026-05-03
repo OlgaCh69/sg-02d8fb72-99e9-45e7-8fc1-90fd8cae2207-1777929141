@@ -493,6 +493,37 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                 <Send className="h-4 w-4 text-white" />
               </Button>
             </div>
+            <div className="mt-2 text-center">
+              <button
+                onClick={async () => {
+                  if (conversationId) {
+                    await supabase
+                      .from("conversations")
+                      .update({
+                        handover_requested: true,
+                        handover_requested_at: new Date().toISOString(),
+                        handover_reason: "User requested human support",
+                      })
+                      .eq("id", conversationId);
+                    
+                    const msg: Message = {
+                      id: `temp_handover_${Date.now()}`,
+                      conversation_id: conversationId,
+                      role: "assistant",
+                      content: "I've notified our team. Someone will reach out to you shortly. In the meantime, please leave your contact details if you haven't already.",
+                      timestamp: new Date().toISOString(),
+                      source_type: null,
+                      source_url: null,
+                    };
+                    setMessages((prev) => [...prev, msg]);
+                    setShowLeadForm(true);
+                  }
+                }}
+                className="text-xs text-slate-500 hover:text-slate-700 underline"
+              >
+                Request human support
+              </button>
+            </div>
           </div>
         </Card>
       )}

@@ -58,17 +58,27 @@ export default function LeadsPage() {
   };
 
   const exportToCSV = () => {
-    const headers = ["Name", "Email", "Phone", "Company", "Inquiry Type", "Lead Score", "CRM Synced", "Captured At"];
-    const csvData = leads.map(lead => [
-      lead.name || "",
-      lead.email,
-      lead.phone || "",
-      lead.company || "",
-      lead.inquiry_type || "",
-      lead.lead_score,
-      lead.crm_synced ? "Yes" : "No",
-      new Date(lead.captured_at).toLocaleString()
-    ]);
+    const headers = ["Name", "Email", "Phone", "Company", "Channel", "Inquiry Type", "Lead Score", "Status", "Budget", "Timeline", "Service Interest", "Urgency", "CRM Synced", "Captured At"];
+    const csvData = leads.map(lead => {
+      const metadata = lead.metadata as any;
+      const leadStatus = lead.lead_score >= 75 ? "HOT" : lead.lead_score >= 50 ? "WARM" : "COLD";
+      return [
+        lead.name || "",
+        lead.email,
+        lead.phone || "",
+        lead.company || "",
+        metadata?.channel || "website",
+        lead.inquiry_type || "",
+        lead.lead_score,
+        leadStatus,
+        lead.budget_range || "",
+        lead.timeline || "",
+        lead.service_interest || "",
+        lead.urgency || "",
+        lead.crm_synced ? "Yes" : "No",
+        new Date(lead.captured_at).toLocaleString()
+      ];
+    });
 
     const csvContent = [
       headers.join(","),
@@ -88,6 +98,12 @@ export default function LeadsPage() {
     lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     lead.company?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getLeadStatusBadge = (score: number) => {
+    if (score >= 75) return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">HOT</Badge>;
+    if (score >= 50) return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">WARM</Badge>;
+    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">COLD</Badge>;
+  };
 
   if (loading) {
     return (
@@ -135,35 +151,47 @@ export default function LeadsPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Company</TableHead>
-                  <TableHead>Inquiry Type</TableHead>
+                  <TableHead>Channel</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Score</TableHead>
+                  <TableHead>Qualification</TableHead>
                   <TableHead>CRM</TableHead>
                   <TableHead>Captured</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="font-medium">{lead.name || "-"}</TableCell>
-                    <TableCell>{lead.email}</TableCell>
-                    <TableCell>{lead.phone || "-"}</TableCell>
-                    <TableCell>{lead.company || "-"}</TableCell>
-                    <TableCell>{lead.inquiry_type || "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{lead.lead_score}/100</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {lead.crm_synced ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-slate-300" />
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-500">
-                      {new Date(lead.captured_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredLeads.map((lead) => {
+                  const metadata = lead.metadata as any;
+                  return (
+                    <TableRow key={lead.id}>
+                      <TableCell className="font-medium">{lead.name || "-"}</TableCell>
+                      <TableCell>{lead.email}</TableCell>
+                      <TableCell>{lead.phone || "-"}</TableCell>
+                      <TableCell>{lead.company || "-"}</TableCell>
+                      <TableCell className="capitalize">{metadata?.channel || "website"}</TableCell>
+                      <TableCell>{getLeadStatusBadge(lead.lead_score)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{lead.lead_score}/100</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600">
+                        {lead.service_interest && <div>Service: {lead.service_interest}</div>}
+                        {lead.budget_range && <div>Budget: {lead.budget_range}</div>}
+                        {lead.timeline && <div>Timeline: {lead.timeline}</div>}
+                        {lead.urgency && <div>Urgency: {lead.urgency}</div>}
+                      </TableCell>
+                      <TableCell>
+                        {lead.crm_synced ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-slate-300" />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-500">
+                        {new Date(lead.captured_at).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
             {filteredLeads.length === 0 && (
