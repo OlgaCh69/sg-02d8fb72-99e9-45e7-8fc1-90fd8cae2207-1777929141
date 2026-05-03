@@ -378,7 +378,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     <>
       {!isOpen && (
         <Button
-          onClick={handleOpen}
+          onClick={() => handleOpen("manual")}
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50"
           style={{ backgroundColor: primaryColor }}
         >
