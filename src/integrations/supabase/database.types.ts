@@ -102,6 +102,57 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_summaries: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          extracted_data: Json | null
+          id: string
+          intent: string | null
+          key_points: Json | null
+          sentiment: string | null
+          summary: string
+          user_profile_id: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          extracted_data?: Json | null
+          id?: string
+          intent?: string | null
+          key_points?: Json | null
+          sentiment?: string | null
+          summary: string
+          user_profile_id?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          extracted_data?: Json | null
+          id?: string
+          intent?: string | null
+          key_points?: Json | null
+          sentiment?: string | null
+          summary?: string
+          user_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_summaries_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_summaries_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           browser: string | null
@@ -111,12 +162,16 @@ export type Database = {
           device: string | null
           ended_at: string | null
           id: string
+          memory_consent: boolean | null
           metadata: Json | null
+          needs_summary: boolean | null
           page_url: string | null
           referrer: string | null
           session_id: string
           started_at: string | null
           status: string | null
+          summary_generated_at: string | null
+          user_profile_id: string | null
           visitor_id: string
         }
         Insert: {
@@ -127,12 +182,16 @@ export type Database = {
           device?: string | null
           ended_at?: string | null
           id?: string
+          memory_consent?: boolean | null
           metadata?: Json | null
+          needs_summary?: boolean | null
           page_url?: string | null
           referrer?: string | null
           session_id: string
           started_at?: string | null
           status?: string | null
+          summary_generated_at?: string | null
+          user_profile_id?: string | null
           visitor_id: string
         }
         Update: {
@@ -143,15 +202,27 @@ export type Database = {
           device?: string | null
           ended_at?: string | null
           id?: string
+          memory_consent?: boolean | null
           metadata?: Json | null
+          needs_summary?: boolean | null
           page_url?: string | null
           referrer?: string | null
           session_id?: string
           started_at?: string | null
           status?: string | null
+          summary_generated_at?: string | null
+          user_profile_id?: string | null
           visitor_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crawl_logs: {
         Row: {
@@ -582,6 +653,98 @@ export type Database = {
         }
         Relationships: []
       }
+      user_attributes: {
+        Row: {
+          attribute_key: string
+          attribute_value: string | null
+          created_at: string | null
+          id: string
+          source: string | null
+          updated_at: string | null
+          user_profile_id: string | null
+        }
+        Insert: {
+          attribute_key: string
+          attribute_value?: string | null
+          created_at?: string | null
+          id?: string
+          source?: string | null
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Update: {
+          attribute_key?: string
+          attribute_value?: string | null
+          created_at?: string | null
+          id?: string
+          source?: string | null
+          updated_at?: string | null
+          user_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_attributes_user_profile_id_fkey"
+            columns: ["user_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          first_seen_at: string | null
+          full_name: string | null
+          id: string
+          last_seen_at: string | null
+          lead_score: number | null
+          lead_status: string | null
+          notes: string | null
+          phone: string | null
+          preferences: Json | null
+          tags: string[] | null
+          total_conversations: number | null
+          updated_at: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          first_seen_at?: string | null
+          full_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          lead_score?: number | null
+          lead_status?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferences?: Json | null
+          tags?: string[] | null
+          total_conversations?: number | null
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          first_seen_at?: string | null
+          full_name?: string | null
+          id?: string
+          last_seen_at?: string | null
+          lead_score?: number | null
+          lead_status?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferences?: Json | null
+          tags?: string[] | null
+          total_conversations?: number | null
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
       website_pages: {
         Row: {
           content: string | null
@@ -662,7 +825,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_user_conversations: {
+        Args: { profile_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
