@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/conversations", icon: MessageSquare, label: "Conversations" },
     { href: "/admin/leads", icon: Users, label: "Leads" },
-    { href: "/admin/knowledge-base", icon: Book, label: "Knowledge Base" },
+    { href: "/admin/knowledge-base", icon: BookOpen, label: "Knowledge Base" },
     { href: "/admin/settings", icon: Settings, label: "Settings" },
   ];
 
