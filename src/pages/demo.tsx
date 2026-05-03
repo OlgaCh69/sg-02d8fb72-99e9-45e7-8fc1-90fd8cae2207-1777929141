@@ -1,5 +1,6 @@
 import { ChatWidget } from "@/components/ChatWidget";
 import { SEO } from "@/components/SEO";
+import Link from "next/link";
 
 export default function DemoPage() {
   return (
@@ -77,9 +78,9 @@ export default function DemoPage() {
             <div className="mt-12 pt-8 border-t border-slate-200">
               <p className="text-slate-500 text-sm">
                 Want to add this to your website?{" "}
-                <a href="/admin/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                <Link href="/admin/login" className="text-indigo-600 hover:text-indigo-700 font-medium">
                   Login to admin panel
-                </a>{" "}
+                </Link>{" "}
                 to get the embed code.
               </p>
             </div>

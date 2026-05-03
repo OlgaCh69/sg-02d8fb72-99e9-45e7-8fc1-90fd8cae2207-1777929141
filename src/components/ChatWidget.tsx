@@ -107,7 +107,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
           conversation_id: data.id,
           role: "assistant",
           content: welcomeMessage,
-          created_at: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         };
         setMessages([msg]);
       }
@@ -126,7 +126,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       conversation_id: conversationId,
       role: "user",
       content: inputValue,
-      created_at: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -159,7 +159,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         conversation_id: conversationId,
         role: "assistant",
         content: data.response,
-        created_at: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -180,7 +180,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         conversation_id: conversationId,
         role: "assistant",
         content: "Sorry, I'm having trouble responding right now. Please try again.",
-        created_at: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -216,7 +216,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
           conversation_id: conversationId,
           role: "assistant",
           content: "Thank you! I'll have someone from our team reach out to you shortly.",
-          created_at: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, thankYouMessage]);
       }

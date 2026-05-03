@@ -188,6 +188,7 @@ export type Database = {
           metadata: Json | null
           name: string | null
           phone: string | null
+          visitor_id: string | null
         }
         Insert: {
           captured_at?: string | null
@@ -202,6 +203,7 @@ export type Database = {
           metadata?: Json | null
           name?: string | null
           phone?: string | null
+          visitor_id?: string | null
         }
         Update: {
           captured_at?: string | null
@@ -216,6 +218,7 @@ export type Database = {
           metadata?: Json | null
           name?: string | null
           phone?: string | null
+          visitor_id?: string | null
         }
         Relationships: [
           {
@@ -293,7 +296,9 @@ export type Database = {
         Row: {
           button_text: string | null
           id: string
+          is_enabled: boolean | null
           lead_capture_enabled: boolean | null
+          position: string | null
           primary_color: string | null
           updated_at: string | null
           welcome_message: string | null
@@ -301,7 +306,9 @@ export type Database = {
         Insert: {
           button_text?: string | null
           id?: string
+          is_enabled?: boolean | null
           lead_capture_enabled?: boolean | null
+          position?: string | null
           primary_color?: string | null
           updated_at?: string | null
           welcome_message?: string | null
@@ -309,7 +316,9 @@ export type Database = {
         Update: {
           button_text?: string | null
           id?: string
+          is_enabled?: boolean | null
           lead_capture_enabled?: boolean | null
+          position?: string | null
           primary_color?: string | null
           updated_at?: string | null
           welcome_message?: string | null

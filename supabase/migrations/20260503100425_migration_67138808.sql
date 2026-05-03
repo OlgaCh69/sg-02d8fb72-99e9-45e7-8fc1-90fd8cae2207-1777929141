@@ -1,0 +1,3 @@
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS visitor_id TEXT;
+ALTER TABLE widget_settings ADD COLUMN IF NOT EXISTS is_enabled BOOLEAN DEFAULT true;
+ALTER TABLE widget_settings ADD COLUMN IF NOT EXISTS position TEXT DEFAULT 'bottom-right';
