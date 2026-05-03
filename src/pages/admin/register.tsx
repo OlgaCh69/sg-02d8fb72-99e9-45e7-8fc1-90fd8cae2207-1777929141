@@ -56,6 +56,10 @@ export default function RegisterPage() {
       if (authError) throw authError;
 
       if (authData.user) {
+        // Wait a moment for trigger to create profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Update profile with additional business details
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
@@ -72,6 +76,7 @@ export default function RegisterPage() {
           console.error("Profile update error:", profileError);
         }
 
+        // Check if widget settings exist, create if not
         const { data: widgetSettings } = await supabase
           .from("widget_settings")
           .select("*")
