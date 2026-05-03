@@ -390,100 +390,118 @@ export default function KnowledgeSourcesPage() {
           <TabsContent value="documents">
             <Card>
               <CardHeader>
-                <CardTitle>Documents</CardTitle>
-                <CardDescription>Upload and manage knowledge documents</CardDescription>
+                <CardTitle>Document Upload</CardTitle>
+                <CardDescription>Upload text content or paste document content here</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
-                  <Label>Upload New Document</Label>
-                  <Input
-                    placeholder="Document title"
-                    value={newDoc.title}
-                    onChange={(e) => setNewDoc({ ...newDoc, title: e.target.value })}
-                  />
-                  <Textarea
-                    placeholder="Paste document content here..."
-                    value={newDoc.content}
-                    onChange={(e) => setNewDoc({ ...newDoc, content: e.target.value })}
-                    rows={6}
-                  />
+                {/* Upload Form - Always visible at top */}
+                <div className="space-y-3 p-4 border-2 border-indigo-200 bg-indigo-50 rounded-lg">
+                  <div className="space-y-2">
+                    <Label htmlFor="doc-title" className="text-base font-semibold">Document Title</Label>
+                    <Input
+                      id="doc-title"
+                      placeholder="e.g., Product Guide, FAQ Document, Policy Document"
+                      value={newDoc.title}
+                      onChange={(e) => setNewDoc({ ...newDoc, title: e.target.value })}
+                      className="bg-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="doc-content" className="text-base font-semibold">Document Content</Label>
+                    <Textarea
+                      id="doc-content"
+                      placeholder="Paste your document content here... (plain text, no formatting needed)"
+                      value={newDoc.content}
+                      onChange={(e) => setNewDoc({ ...newDoc, content: e.target.value })}
+                      rows={8}
+                      className="bg-white font-mono text-sm"
+                    />
+                  </div>
                   <Button
                     onClick={handleDocumentUpload}
                     disabled={uploading || !newDoc.title || !newDoc.content}
-                    className="w-full"
+                    className="w-full h-12 text-base"
+                    size="lg"
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Document
+                    <Upload className="h-5 w-5 mr-2" />
+                    {uploading ? "Uploading..." : "Upload Document"}
                   </Button>
                 </div>
 
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {documents.map((doc) => (
-                      <TableRow key={doc.id}>
-                        <TableCell className="font-medium">{doc.title}</TableCell>
-                        <TableCell>
-                          {doc.status === "approved" && (
-                            <Badge className="bg-green-100 text-green-800">Approved</Badge>
-                          )}
-                          {doc.status === "pending" && (
-                            <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
-                          )}
-                          {doc.status === "excluded" && (
-                            <Badge className="bg-slate-100 text-slate-800">Excluded</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-600">
-                          {new Date(doc.uploaded_at || new Date()).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            {doc.status === "pending" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateDocumentStatus(doc.id, "approved")}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {doc.status === "approved" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateDocumentStatus(doc.id, "excluded")}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => deleteDocument(doc.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                {documents.length === 0 && (
-                  <div className="text-center py-12 text-slate-500">
-                    No documents uploaded yet
-                  </div>
-                )}
+                {/* Existing Documents List */}
+                <div className="pt-4">
+                  <h3 className="text-lg font-semibold mb-3">Uploaded Documents ({documents.length})</h3>
+                  {documents.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Uploaded</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {documents.map((doc) => (
+                          <TableRow key={doc.id}>
+                            <TableCell className="font-medium">{doc.title}</TableCell>
+                            <TableCell>
+                              {doc.status === "approved" && (
+                                <Badge className="bg-green-100 text-green-800">Approved</Badge>
+                              )}
+                              {doc.status === "pending" && (
+                                <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                              )}
+                              {doc.status === "excluded" && (
+                                <Badge className="bg-slate-100 text-slate-800">Excluded</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-600">
+                              {new Date(doc.uploaded_at || new Date()).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                {doc.status === "pending" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => updateDocumentStatus(doc.id, "approved")}
+                                    title="Approve"
+                                  >
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                )}
+                                {doc.status === "approved" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => updateDocumentStatus(doc.id, "excluded")}
+                                    title="Exclude"
+                                  >
+                                    <XCircle className="h-4 w-4 text-slate-600" />
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => deleteDocument(doc.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8 bg-slate-50 rounded-lg text-slate-500">
+                      No documents uploaded yet. Use the form above to upload your first document.
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -491,110 +509,138 @@ export default function KnowledgeSourcesPage() {
           <TabsContent value="products">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Products & Services</CardTitle>
-                    <CardDescription>Manage your catalog for AI recommendations</CardDescription>
-                  </div>
-                  <Button onClick={() => setShowProductForm(!showProductForm)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
-                  </Button>
-                </div>
+                <CardTitle>Products & Services Catalog</CardTitle>
+                <CardDescription>Add your products or services for AI recommendations</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {showProductForm && (
-                  <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
+                {/* Product Form - Always visible at top */}
+                <div className="space-y-3 p-4 border-2 border-purple-200 bg-purple-50 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2">Add New Product/Service</h3>
+                  <div className="space-y-2">
+                    <Label htmlFor="prod-name" className="text-base font-semibold">Name</Label>
                     <Input
-                      placeholder="Product/Service name"
+                      id="prod-name"
+                      placeholder="e.g., Premium Consulting Package, Monthly Subscription"
                       value={newProduct.name}
                       onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                      className="bg-white"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prod-desc" className="text-base font-semibold">Description</Label>
                     <Textarea
-                      placeholder="Description"
+                      id="prod-desc"
+                      placeholder="Describe this product or service..."
                       value={newProduct.description}
                       onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
                       rows={3}
+                      className="bg-white"
                     />
-                    <div className="grid md:grid-cols-2 gap-3">
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="prod-price">Price (Optional)</Label>
                       <Input
-                        placeholder="Price (optional)"
+                        id="prod-price"
+                        placeholder="e.g., $99/month, $1,500"
                         value={newProduct.price}
                         onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                      />
-                      <Input
-                        placeholder="Category (optional)"
-                        value={newProduct.category}
-                        onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                        className="bg-white"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="prod-category">Category (Optional)</Label>
+                      <Input
+                        id="prod-category"
+                        placeholder="e.g., Consulting, Software, Hardware"
+                        value={newProduct.category}
+                        onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="prod-features">Features (Optional - one per line)</Label>
                     <Textarea
-                      placeholder="Features (one per line)"
+                      id="prod-features"
+                      placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
                       value={newProduct.features}
                       onChange={(e) => setNewProduct({ ...newProduct, features: e.target.value })}
                       rows={4}
+                      className="bg-white font-mono text-sm"
                     />
-                    <div className="flex gap-2">
-                      <Button onClick={handleProductSubmit} className="flex-1">
-                        Create Product
-                      </Button>
-                      <Button variant="outline" onClick={() => setShowProductForm(false)}>
-                        Cancel
-                      </Button>
+                  </div>
+                  <Button
+                    onClick={handleProductSubmit}
+                    disabled={!newProduct.name || !newProduct.description}
+                    className="w-full h-12 text-base"
+                    size="lg"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Create Product/Service
+                  </Button>
+                </div>
+
+                {/* Existing Products List */}
+                <div className="pt-4">
+                  <h3 className="text-lg font-semibold mb-3">Your Products & Services ({products.length})</h3>
+                  {products.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {products.map((product) => (
+                          <TableRow key={product.id}>
+                            <TableCell className="font-medium">{product.name}</TableCell>
+                            <TableCell>{product.category || "-"}</TableCell>
+                            <TableCell>{product.pricing || "-"}</TableCell>
+                            <TableCell>
+                              <Badge className={product.is_active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-800"}>
+                                {product.is_active ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => toggleProduct(product.id, product.is_active)}
+                                  title={product.is_active ? "Deactivate" : "Activate"}
+                                >
+                                  {product.is_active ? (
+                                    <XCircle className="h-4 w-4 text-slate-600" />
+                                  ) : (
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => deleteProduct(product.id)}
+                                  className="text-red-600 hover:text-red-700"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <div className="text-center py-8 bg-slate-50 rounded-lg text-slate-500">
+                      No products added yet. Use the form above to add your first product or service.
                     </div>
-                  </div>
-                )}
-
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.category || "-"}</TableCell>
-                        <TableCell>{product.pricing || "-"}</TableCell>
-                        <TableCell>
-                          <Badge className={product.is_active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-800"}>
-                            {product.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => toggleProduct(product.id, product.is_active)}
-                            >
-                              {product.is_active ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => deleteProduct(product.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                {products.length === 0 && (
-                  <div className="text-center py-12 text-slate-500">
-                    No products added yet
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
