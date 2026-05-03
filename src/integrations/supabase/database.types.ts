@@ -266,29 +266,41 @@ export type Database = {
         Row: {
           admin_role: string | null
           avatar_url: string | null
+          company_name: string | null
           created_at: string | null
           email: string | null
           full_name: string | null
           id: string
+          industry: string | null
+          phone: string | null
           updated_at: string | null
+          website: string | null
         }
         Insert: {
           admin_role?: string | null
           avatar_url?: string | null
+          company_name?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          industry?: string | null
+          phone?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Update: {
           admin_role?: string | null
           avatar_url?: string | null
+          company_name?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          industry?: string | null
+          phone?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Relationships: []
       }

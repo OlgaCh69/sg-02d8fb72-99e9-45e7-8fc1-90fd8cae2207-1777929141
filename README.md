@@ -15,44 +15,33 @@ A complete AI-powered chat widget system with lead capture, CRM integration, and
 
 ## Quick Start
 
-### 1. Admin Login
+### 1. Create Your Admin Account
+
+Since this is a fresh installation, you need to create your first admin account:
+
+**Option A: Register Your Business (Recommended)**
+1. Go to `/admin/register`
+2. Fill in your details (email, password, company name, etc.)
+3. Your account will automatically have admin privileges
+4. You'll be redirected to the dashboard
+
+**Option B: Use Demo Credentials (After Registration)**
+Once you've registered one account, you can create a demo account:
+1. Go to `/admin/register`
+2. Use these details:
+   - Email: `demo@example.com`
+   - Password: `demo123`
+   - Company: `Demo Company`
+   - Fill in other fields as needed
+3. This creates a test account you can share
+
+### 2. Admin Login
 
 **URL:** `/admin/login`
 
-**Demo Account (Try it now!):**
-- Email: `demo@example.com`
-- Password: `demo123`
+After registration, login with your credentials.
 
-**Default Admin Account:**
-- Email: `admin@example.com`
-- Password: `admin123`
-
-**First Time Business User?**
-- Go to `/admin/register` to create your account
-- Fill in your business details (company name, website, industry)
-- Your account is automatically set up with admin privileges
-- Widget settings are initialized for you
-
-⚠️ **IMPORTANT:** Change your password immediately after first login!
-
-### 2. Register Your Business
-
-**URL:** `/admin/register`
-
-**What you'll need:**
-- Full name
-- Email address
-- Password (min 6 characters)
-- Company name (required)
-- Phone number (optional)
-- Website URL (optional)
-- Industry (optional)
-
-Once registered, you'll automatically:
-- Get admin access to the dashboard
-- Have widget settings initialized
-- Be able to customize your AI assistant
-- Start capturing leads immediately
+⚠️ **First Time Setup:** You must register an account first at `/admin/register` before you can login.
 
 ### 3. Configure Knowledge Base
 

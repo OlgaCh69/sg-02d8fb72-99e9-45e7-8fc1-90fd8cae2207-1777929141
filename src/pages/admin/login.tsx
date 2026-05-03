@@ -97,10 +97,11 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <div className="bg-indigo-50 border border-indigo-200 px-4 py-3 rounded-lg text-sm space-y-1">
-                <p className="font-medium text-indigo-900">Demo Credentials:</p>
-                <p className="text-indigo-700">Email: demo@example.com</p>
-                <p className="text-indigo-700">Password: demo123</p>
+              <div className="bg-blue-50 border border-blue-200 px-4 py-3 rounded-lg text-sm space-y-2">
+                <p className="font-medium text-blue-900">First time here?</p>
+                <p className="text-blue-700 text-xs">
+                  You need to register your business account first. Click "Register your business" below to create your admin account.
+                </p>
               </div>
 
               <Button
@@ -124,9 +125,6 @@ export default function LoginPage() {
                   <Link href="/admin/register" className="text-indigo-600 hover:text-indigo-700 font-medium">
                     Register your business
                   </Link>
-                </p>
-                <p className="text-xs text-slate-500">
-                  Or try the demo account above
                 </p>
               </div>
             </form>
