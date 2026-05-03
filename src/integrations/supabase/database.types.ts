@@ -57,9 +57,55 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_settings: {
+        Row: {
+          access_token: string | null
+          app_secret: string | null
+          business_account_id: string | null
+          channel: string
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          phone_number_id: string | null
+          settings: Json | null
+          updated_at: string | null
+          verify_token: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          app_secret?: string | null
+          business_account_id?: string | null
+          channel: string
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          phone_number_id?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          verify_token?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          app_secret?: string | null
+          business_account_id?: string | null
+          channel?: string
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          phone_number_id?: string | null
+          settings?: Json | null
+          updated_at?: string | null
+          verify_token?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           browser: string | null
+          channel: string | null
           country: string | null
           created_at: string | null
           device: string | null
@@ -75,6 +121,7 @@ export type Database = {
         }
         Insert: {
           browser?: string | null
+          channel?: string | null
           country?: string | null
           created_at?: string | null
           device?: string | null
@@ -90,6 +137,7 @@ export type Database = {
         }
         Update: {
           browser?: string | null
+          channel?: string | null
           country?: string | null
           created_at?: string | null
           device?: string | null
@@ -489,6 +537,48 @@ export type Database = {
           phone?: string | null
           updated_at?: string | null
           website?: string | null
+        }
+        Relationships: []
+      }
+      social_profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          metadata: Json | null
+          name: string | null
+          phone: string | null
+          platform: string
+          platform_user_id: string
+          profile_pic_url: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string | null
+          phone?: string | null
+          platform: string
+          platform_user_id: string
+          profile_pic_url?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string | null
+          phone?: string | null
+          platform?: string
+          platform_user_id?: string
+          profile_pic_url?: string | null
+          updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
