@@ -161,6 +161,9 @@ export type Database = {
           created_at: string | null
           device: string | null
           ended_at: string | null
+          handover_reason: string | null
+          handover_requested: boolean | null
+          handover_requested_at: string | null
           human_handover_at: string | null
           human_handover_requested: boolean | null
           id: string
@@ -188,6 +191,9 @@ export type Database = {
           created_at?: string | null
           device?: string | null
           ended_at?: string | null
+          handover_reason?: string | null
+          handover_requested?: boolean | null
+          handover_requested_at?: string | null
           human_handover_at?: string | null
           human_handover_requested?: boolean | null
           id?: string
@@ -215,6 +221,9 @@ export type Database = {
           created_at?: string | null
           device?: string | null
           ended_at?: string | null
+          handover_reason?: string | null
+          handover_requested?: boolean | null
+          handover_requested_at?: string | null
           human_handover_at?: string | null
           human_handover_requested?: boolean | null
           id?: string
@@ -460,6 +469,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          budget_range: string | null
           captured_at: string | null
           company: string | null
           conversation_id: string | null
@@ -472,9 +482,13 @@ export type Database = {
           metadata: Json | null
           name: string | null
           phone: string | null
+          service_interest: string | null
+          timeline: string | null
+          urgency: string | null
           visitor_id: string | null
         }
         Insert: {
+          budget_range?: string | null
           captured_at?: string | null
           company?: string | null
           conversation_id?: string | null
@@ -487,9 +501,13 @@ export type Database = {
           metadata?: Json | null
           name?: string | null
           phone?: string | null
+          service_interest?: string | null
+          timeline?: string | null
+          urgency?: string | null
           visitor_id?: string | null
         }
         Update: {
+          budget_range?: string | null
           captured_at?: string | null
           company?: string | null
           conversation_id?: string | null
@@ -502,6 +520,9 @@ export type Database = {
           metadata?: Json | null
           name?: string | null
           phone?: string | null
+          service_interest?: string | null
+          timeline?: string | null
+          urgency?: string | null
           visitor_id?: string | null
         }
         Relationships: [
