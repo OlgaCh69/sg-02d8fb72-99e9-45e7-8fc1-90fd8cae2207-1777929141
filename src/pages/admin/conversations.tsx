@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ExternalLink } from "lucide-react";
+import { Search, ExternalLink, FileText, Globe, BookOpen } from "lucide-react";
+import { SEO } from "@/components/SEO";
 import type { Database } from "@/integrations/supabase/types";
 
 type Conversation = Database["public"]["Tables"]["conversations"]["Row"] & {
@@ -73,9 +74,28 @@ export default function ConversationsPage() {
     }
   };
 
+  const getSourceIcon = (sourceType: string | null) => {
+    switch (sourceType) {
+      case "knowledge_base": return BookOpen;
+      case "website_page": return Globe;
+      case "document": return FileText;
+      default: return null;
+    }
+  };
+
+  const getSourceColor = (sourceType: string | null) => {
+    switch (sourceType) {
+      case "knowledge_base": return "text-indigo-600";
+      case "website_page": return "text-cyan-600";
+      case "document": return "text-green-600";
+      default: return "text-slate-400";
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout>
+        <SEO title="Conversations - AI Assistant Admin" />
         <p>Loading...</p>
       </AdminLayout>
     );
@@ -83,6 +103,7 @@ export default function ConversationsPage() {
 
   return (
     <AdminLayout>
+      <SEO title="Conversations - AI Assistant Admin" />
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Conversations</h1>
@@ -126,17 +147,39 @@ export default function ConversationsPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="text-sm text-slate-600">
                     {conversation.messages.length} messages
                   </div>
-                  {conversation.messages.length > 0 && (
-                    <div className="bg-slate-50 p-3 rounded-lg text-sm">
-                      <span className="font-medium">Last message: </span>
-                      {conversation.messages[conversation.messages.length - 1]?.content.slice(0, 100)}
-                      {conversation.messages[conversation.messages.length - 1]?.content.length > 100 && "..."}
-                    </div>
-                  )}
+                  
+                  {/* Message transcript with source tracking */}
+                  <div className="space-y-2 bg-slate-50 p-4 rounded-lg max-h-96 overflow-y-auto">
+                    {conversation.messages.map((msg, idx) => (
+                      <div key={idx} className={`text-sm ${msg.role === 'user' ? 'text-slate-900' : 'text-slate-700'}`}>
+                        <div className="flex items-start gap-2">
+                          <span className="font-semibold min-w-[60px]">
+                            {msg.role === 'user' ? 'Visitor:' : 'AI:'}
+                          </span>
+                          <div className="flex-1">
+                            <p>{msg.content}</p>
+                            {/* Show source for AI responses */}
+                            {msg.role === 'assistant' && msg.source_type && msg.source_url && (
+                              <div className="flex items-center gap-1 mt-1 text-xs">
+                                {(() => {
+                                  const Icon = getSourceIcon(msg.source_type);
+                                  return Icon ? <Icon className={`h-3 w-3 ${getSourceColor(msg.source_type)}`} /> : null;
+                                })()}
+                                <span className={`${getSourceColor(msg.source_type)} font-medium`}>
+                                  Source: {msg.source_url}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
                   {conversation.device && (
                     <div className="flex gap-4 text-xs text-slate-500">
                       <span>Device: {conversation.device}</span>
