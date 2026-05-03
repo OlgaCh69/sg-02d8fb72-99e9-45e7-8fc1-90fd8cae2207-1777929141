@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SEO } from "@/components/SEO";
@@ -19,7 +18,6 @@ import {
   Package,
   Database as DatabaseIcon,
   CheckCircle,
-  Clock,
   XCircle,
   Upload,
   Trash2,
@@ -48,12 +46,10 @@ export default function KnowledgeSourcesPage() {
     products: { total: 0, active: 0 },
   });
 
-  // Documents state
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploading, setUploading] = useState(false);
   const [newDoc, setNewDoc] = useState({ title: "", content: "" });
 
-  // Products state
   const [products, setProducts] = useState<Product[]>([]);
   const [showProductForm, setShowProductForm] = useState(false);
   const [newProduct, setNewProduct] = useState({
@@ -227,7 +223,7 @@ export default function KnowledgeSourcesPage() {
         <p>Loading...</p>
       </AdminLayout>
     );
-  };
+  }
 
   const sourceCards = [
     {
@@ -394,12 +390,8 @@ export default function KnowledgeSourcesPage() {
           <TabsContent value="documents">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Documents</CardTitle>
-                    <CardDescription>Upload and manage knowledge documents</CardDescription>
-                  </div>
-                </div>
+                <CardTitle>Documents</CardTitle>
+                <CardDescription>Upload and manage knowledge documents</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
