@@ -388,6 +388,7 @@ export type Database = {
           id: string
           last_processed: string | null
           metadata: Json | null
+          page_count: number | null
           status: string | null
           title: string
           uploaded_at: string | null
@@ -403,6 +404,7 @@ export type Database = {
           id?: string
           last_processed?: string | null
           metadata?: Json | null
+          page_count?: number | null
           status?: string | null
           title: string
           uploaded_at?: string | null
@@ -418,6 +420,7 @@ export type Database = {
           id?: string
           last_processed?: string | null
           metadata?: Json | null
+          page_count?: number | null
           status?: string | null
           title?: string
           uploaded_at?: string | null

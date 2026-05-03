@@ -2,296 +2,613 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SEO } from "@/components/SEO";
 import {
+  BookOpen,
   Globe,
   FileText,
-  Upload,
   Package,
   Database,
   CheckCircle,
   Clock,
   XCircle,
-  ArrowRight,
+  Upload,
+  Trash2,
+  Plus,
+  ExternalLink,
 } from "lucide-react";
-import Link from "next/link";
+import type { Database } from "@/integrations/supabase/types";
 
-type SourceStats = {
+type KnowledgeStats = {
   knowledgeBase: { total: number; active: number };
   websitePages: { total: number; approved: number; pending: number };
-  documents: { total: number; processed: number; pending: number };
+  documents: { total: number; approved: number; pending: number };
   products: { total: number; active: number };
 };
+
+type Document = Database["public"]["Tables"]["documents"]["Row"];
+type Product = Database["public"]["Tables"]["products"]["Row"];
 
 export default function KnowledgeSourcesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<SourceStats>({
+  const [stats, setStats] = useState<KnowledgeStats>({
     knowledgeBase: { total: 0, active: 0 },
     websitePages: { total: 0, approved: 0, pending: 0 },
-    documents: { total: 0, processed: 0, pending: 0 },
+    documents: { total: 0, approved: 0, pending: 0 },
     products: { total: 0, active: 0 },
+  });
+
+  // Documents state
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [newDoc, setNewDoc] = useState({ title: "", content: "" });
+
+  // Products state
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    features: "",
   });
 
   useEffect(() => {
     checkAuth();
     loadStats();
+    loadDocuments();
+    loadProducts();
   }, []);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/admin/login");
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("admin_role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profile?.admin_role !== "admin") {
+      router.push("/admin/login");
     }
   };
 
   const loadStats = async () => {
-    setLoading(true);
+    try {
+      const [kb, pages, docs, prods] = await Promise.all([
+        supabase.from("knowledge_base").select("id, is_active"),
+        supabase.from("website_pages").select("id, status"),
+        supabase.from("documents").select("id, status"),
+        supabase.from("products").select("id, is_active"),
+      ]);
 
-    // Knowledge Base stats
-    const { data: kb } = await supabase.from("knowledge_base").select("is_active");
-    const kbStats = {
-      total: kb?.length || 0,
-      active: kb?.filter(e => e.is_active).length || 0,
-    };
-
-    // Website Pages stats
-    const { data: pages } = await supabase.from("website_pages").select("status");
-    const pagesStats = {
-      total: pages?.length || 0,
-      approved: pages?.filter(p => p.status === "approved").length || 0,
-      pending: pages?.filter(p => p.status === "pending").length || 0,
-    };
-
-    // Documents stats
-    const { data: docs } = await supabase.from("documents").select("status");
-    const docsStats = {
-      total: docs?.length || 0,
-      processed: docs?.filter(d => d.status === "approved").length || 0,
-      pending: docs?.filter(d => d.status === "pending").length || 0,
-    };
-
-    // Products stats
-    const { data: products } = await supabase.from("products").select("is_active");
-    const productsStats = {
-      total: products?.length || 0,
-      active: products?.filter(p => p.is_active).length || 0,
-    };
-
-    setStats({
-      knowledgeBase: kbStats,
-      websitePages: pagesStats,
-      documents: docsStats,
-      products: productsStats,
-    });
-
-    setLoading(false);
+      setStats({
+        knowledgeBase: {
+          total: kb.data?.length || 0,
+          active: kb.data?.filter(k => k.is_active).length || 0,
+        },
+        websitePages: {
+          total: pages.data?.length || 0,
+          approved: pages.data?.filter(p => p.status === "approved").length || 0,
+          pending: pages.data?.filter(p => p.status === "pending").length || 0,
+        },
+        documents: {
+          total: docs.data?.length || 0,
+          approved: docs.data?.filter(d => d.status === "approved").length || 0,
+          pending: docs.data?.filter(d => d.status === "pending").length || 0,
+        },
+        products: {
+          total: prods.data?.length || 0,
+          active: prods.data?.filter(p => p.is_active).length || 0,
+        },
+      });
+    } catch (error) {
+      console.error("Error loading stats:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const sources = [
+  const loadDocuments = async () => {
+    const { data } = await supabase
+      .from("documents")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setDocuments(data || []);
+  };
+
+  const loadProducts = async () => {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setProducts(data || []);
+  };
+
+  const handleDocumentUpload = async () => {
+    if (!newDoc.title || !newDoc.content) return;
+    
+    setUploading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      await supabase.from("documents").insert({
+        title: newDoc.title,
+        content: newDoc.content,
+        status: "pending",
+        uploaded_by: session?.user.id,
+      });
+
+      setNewDoc({ title: "", content: "" });
+      await loadDocuments();
+      await loadStats();
+    } catch (error) {
+      console.error("Error uploading document:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const updateDocumentStatus = async (id: string, status: string) => {
+    await supabase
+      .from("documents")
+      .update({ status })
+      .eq("id", id);
+    await loadDocuments();
+    await loadStats();
+  };
+
+  const deleteDocument = async (id: string) => {
+    await supabase.from("documents").delete().eq("id", id);
+    await loadDocuments();
+    await loadStats();
+  };
+
+  const handleProductSubmit = async () => {
+    if (!newProduct.name || !newProduct.description) return;
+
+    try {
+      const features = newProduct.features
+        .split("\n")
+        .filter(f => f.trim())
+        .map(f => f.trim());
+
+      await supabase.from("products").insert({
+        name: newProduct.name,
+        description: newProduct.description,
+        price: newProduct.price || null,
+        category: newProduct.category || null,
+        features: features,
+        is_active: true,
+      });
+
+      setNewProduct({ name: "", description: "", price: "", category: "", features: "" });
+      setShowProductForm(false);
+      await loadProducts();
+      await loadStats();
+    } catch (error) {
+      console.error("Error creating product:", error);
+    }
+  };
+
+  const toggleProduct = async (id: string, isActive: boolean) => {
+    await supabase
+      .from("products")
+      .update({ is_active: !isActive })
+      .eq("id", id);
+    await loadProducts();
+    await loadStats();
+  };
+
+  const deleteProduct = async (id: string) => {
+    await supabase.from("products").delete().eq("id", id);
+    await loadProducts();
+    await loadStats();
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <SEO title="Knowledge Sources - AI Assistant Admin" />
+        <p>Loading...</p>
+      </AdminLayout>
+    );
+  };
+
+  const sourceCards = [
     {
-      icon: Globe,
       title: "Website Crawler",
-      description: "Automatically sync content from your website pages",
-      stats: `${stats.websitePages.approved} approved, ${stats.websitePages.pending} pending`,
-      total: stats.websitePages.total,
-      active: stats.websitePages.approved,
-      href: "/admin/website-sync",
-      color: "indigo",
-    },
-    {
-      icon: FileText,
-      title: "Manual FAQ Entries",
-      description: "Hand-crafted question and answer pairs",
-      stats: `${stats.knowledgeBase.active} active entries`,
-      total: stats.knowledgeBase.total,
-      active: stats.knowledgeBase.active,
-      href: "/admin/knowledge-base",
+      description: "Auto-sync pages from your website",
+      icon: Globe,
       color: "cyan",
+      stats: `${stats.websitePages.approved} approved, ${stats.websitePages.pending} pending`,
+      href: "/admin/website-sync",
     },
     {
-      icon: Upload,
-      title: "Uploaded Documents",
-      description: "PDF files and documents (Coming Soon)",
-      stats: `${stats.documents.processed} processed, ${stats.documents.pending} pending`,
-      total: stats.documents.total,
-      active: stats.documents.processed,
-      href: "#",
+      title: "Manual FAQ",
+      description: "Hand-crafted Q&A entries",
+      icon: BookOpen,
+      color: "indigo",
+      stats: `${stats.knowledgeBase.active} active of ${stats.knowledgeBase.total}`,
+      href: "/admin/knowledge-base",
+    },
+    {
+      title: "Documents",
+      description: "Upload PDFs, docs, and text files",
+      icon: FileText,
       color: "green",
-      comingSoon: true,
+      stats: `${stats.documents.approved} approved, ${stats.documents.pending} pending`,
+      href: "#documents",
     },
     {
-      icon: Package,
       title: "Products & Services",
-      description: "Product catalog and service information (Coming Soon)",
-      stats: `${stats.products.active} active products`,
-      total: stats.products.total,
-      active: stats.products.active,
-      href: "#",
+      description: "Your product/service catalog",
+      icon: Package,
       color: "purple",
-      comingSoon: true,
+      stats: `${stats.products.active} active of ${stats.products.total}`,
+      href: "#products",
     },
     {
-      icon: Database,
       title: "CRM Integration",
-      description: "Knowledge from your CRM system (Coming Soon)",
-      stats: "Not configured",
-      total: 0,
-      active: 0,
+      description: "Sync with your CRM system",
+      icon: Database,
+      color: "orange",
+      stats: "Configure webhook",
       href: "/admin/settings",
-      color: "amber",
-      comingSoon: true,
     },
   ];
-
-  const totalKnowledge = stats.knowledgeBase.active + stats.websitePages.approved + stats.documents.processed + stats.products.active;
 
   return (
     <AdminLayout>
       <SEO title="Knowledge Sources - AI Assistant Admin" />
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Knowledge Sources</h1>
-          <p className="text-slate-600">Manage where your AI assistant learns from</p>
+          <h1 className="text-3xl font-bold tracking-tight">Knowledge Sources</h1>
+          <p className="text-slate-600 mt-1">
+            Connect and manage all knowledge sources for your AI assistant
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-slate-600 mb-2">
-                <CheckCircle className="h-4 w-4" />
-                <span className="text-sm">Total Active Knowledge</span>
-              </div>
-              <p className="text-3xl font-bold text-indigo-600">{totalKnowledge}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-slate-600 mb-2">
-                <Database className="h-4 w-4" />
-                <span className="text-sm">Sources Connected</span>
-              </div>
-              <p className="text-3xl font-bold text-cyan-600">
-                {[stats.knowledgeBase.total > 0, stats.websitePages.total > 0, stats.documents.total > 0, stats.products.total > 0].filter(Boolean).length}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 text-slate-600 mb-2">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm">Pending Review</span>
-              </div>
-              <p className="text-3xl font-bold text-amber-600">
-                {stats.websitePages.pending + stats.documents.pending}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sourceCards.map((source) => (
+            <Card key={source.title} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className={`p-2 bg-${source.color}-100 rounded-lg`}>
+                    <source.icon className={`h-6 w-6 text-${source.color}-600`} />
+                  </div>
+                  {source.href.startsWith("#") ? (
+                    <Badge variant="outline">{stats.websitePages.total > 0 ? "Active" : "Setup"}</Badge>
+                  ) : (
+                    <a href={source.href}>
+                      <ExternalLink className="h-4 w-4 text-slate-400 hover:text-slate-600" />
+                    </a>
+                  )}
+                </div>
+                <CardTitle className="mt-4">{source.title}</CardTitle>
+                <CardDescription>{source.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-600">{source.stats}</p>
+                  {!source.href.startsWith("#") && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => router.push(source.href)}
+                    >
+                      Manage
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {sources.map((source) => {
-            const Icon = source.icon;
-            return (
-              <Card key={source.title} className={source.comingSoon ? "opacity-60" : ""}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg bg-${source.color}-100`}>
-                        <Icon className={`h-6 w-6 text-${source.color}-600`} />
-                      </div>
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {source.title}
-                          {source.comingSoon && (
-                            <span className="text-xs font-normal bg-slate-200 text-slate-600 px-2 py-1 rounded">
-                              Coming Soon
-                            </span>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="products">Products & Services</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle>Knowledge Priority Order</CardTitle>
+                <CardDescription>
+                  The AI checks these sources in order when answering questions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <Badge>1</Badge>
+                    <BookOpen className="h-5 w-5 text-indigo-600" />
+                    <div className="flex-1">
+                      <p className="font-medium">Manual FAQ Entries</p>
+                      <p className="text-sm text-slate-600">Hand-crafted Q&A for common questions</p>
+                    </div>
+                    <Badge variant="outline">{stats.knowledgeBase.active} active</Badge>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <Badge>2</Badge>
+                    <Globe className="h-5 w-5 text-cyan-600" />
+                    <div className="flex-1">
+                      <p className="font-medium">Website Pages</p>
+                      <p className="text-sm text-slate-600">Auto-crawled approved content</p>
+                    </div>
+                    <Badge variant="outline">{stats.websitePages.approved} approved</Badge>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <Badge>3</Badge>
+                    <FileText className="h-5 w-5 text-green-600" />
+                    <div className="flex-1">
+                      <p className="font-medium">Documents</p>
+                      <p className="text-sm text-slate-600">Uploaded PDFs and text files</p>
+                    </div>
+                    <Badge variant="outline">{stats.documents.approved} approved</Badge>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <Badge>4</Badge>
+                    <Package className="h-5 w-5 text-purple-600" />
+                    <div className="flex-1">
+                      <p className="font-medium">Products & Services</p>
+                      <p className="text-sm text-slate-600">Your catalog for recommendations</p>
+                    </div>
+                    <Badge variant="outline">{stats.products.active} active</Badge>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <Badge>5</Badge>
+                    <Database className="h-5 w-5 text-orange-600" />
+                    <div className="flex-1">
+                      <p className="font-medium">CRM Data</p>
+                      <p className="text-sm text-slate-600">Customer history from your CRM</p>
+                    </div>
+                    <Badge variant="outline">Configure</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Documents</CardTitle>
+                    <CardDescription>Upload and manage knowledge documents</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
+                  <Label>Upload New Document</Label>
+                  <Input
+                    placeholder="Document title"
+                    value={newDoc.title}
+                    onChange={(e) => setNewDoc({ ...newDoc, title: e.target.value })}
+                  />
+                  <Textarea
+                    placeholder="Paste document content here..."
+                    value={newDoc.content}
+                    onChange={(e) => setNewDoc({ ...newDoc, content: e.target.value })}
+                    rows={6}
+                  />
+                  <Button
+                    onClick={handleDocumentUpload}
+                    disabled={uploading || !newDoc.title || !newDoc.content}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Document
+                  </Button>
+                </div>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((doc) => (
+                      <TableRow key={doc.id}>
+                        <TableCell className="font-medium">{doc.title}</TableCell>
+                        <TableCell>
+                          {doc.status === "approved" && (
+                            <Badge className="bg-green-100 text-green-800">Approved</Badge>
                           )}
-                        </CardTitle>
-                        <CardDescription>{source.description}</CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-600">{source.stats}</span>
-                    </div>
+                          {doc.status === "pending" && (
+                            <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                          )}
+                          {doc.status === "excluded" && (
+                            <Badge className="bg-slate-100 text-slate-800">Excluded</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-slate-600">
+                          {new Date(doc.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            {doc.status === "pending" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateDocumentStatus(doc.id, "approved")}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {doc.status === "approved" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateDocumentStatus(doc.id, "excluded")}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteDocument(doc.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
+                {documents.length === 0 && (
+                  <div className="text-center py-12 text-slate-500">
+                    No documents uploaded yet
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Products & Services</CardTitle>
+                    <CardDescription>Manage your catalog for AI recommendations</CardDescription>
+                  </div>
+                  <Button onClick={() => setShowProductForm(!showProductForm)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Product
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {showProductForm && (
+                  <div className="space-y-3 p-4 bg-slate-50 rounded-lg">
+                    <Input
+                      placeholder="Product/Service name"
+                      value={newProduct.name}
+                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                    />
+                    <Textarea
+                      placeholder="Description"
+                      value={newProduct.description}
+                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                      rows={3}
+                    />
+                    <div className="grid md:grid-cols-2 gap-3">
+                      <Input
+                        placeholder="Price (optional)"
+                        value={newProduct.price}
+                        onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Category (optional)"
+                        value={newProduct.category}
+                        onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Features (one per line)"
+                      value={newProduct.features}
+                      onChange={(e) => setNewProduct({ ...newProduct, features: e.target.value })}
+                      rows={4}
+                    />
                     <div className="flex gap-2">
-                      <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-full bg-${source.color}-600 transition-all`}
-                          style={{
-                            width: source.total > 0 ? `${(source.active / source.total) * 100}%` : "0%",
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs text-slate-600 min-w-[3rem] text-right">
-                        {source.total > 0 ? Math.round((source.active / source.total) * 100) : 0}%
-                      </span>
-                    </div>
-
-                    {!source.comingSoon ? (
-                      <Link href={source.href}>
-                        <Button variant="outline" className="w-full">
-                          Manage
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Button variant="outline" className="w-full" disabled>
-                        Coming Soon
+                      <Button onClick={handleProductSubmit} className="flex-1">
+                        Create Product
                       </Button>
-                    )}
+                      <Button variant="outline" onClick={() => setShowProductForm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                )}
 
-        <Card className="border-indigo-200 bg-indigo-50">
-          <CardHeader>
-            <CardTitle className="text-indigo-900">How Knowledge Sources Work</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-indigo-800">
-            <div className="flex gap-3">
-              <div className="font-bold text-indigo-600">1.</div>
-              <div>
-                <p className="font-medium">Priority Order</p>
-                <p className="text-indigo-700">AI checks Manual FAQ → Website Pages → Documents → Products → CRM in that order</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="font-bold text-indigo-600">2.</div>
-              <div>
-                <p className="font-medium">Source Tracking</p>
-                <p className="text-indigo-700">Every AI answer logs which source was used - visible in conversation history</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="font-bold text-indigo-600">3.</div>
-              <div>
-                <p className="font-medium">Approval Required</p>
-                <p className="text-indigo-700">Website pages and documents need admin approval before AI can use them</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="font-bold text-indigo-600">4.</div>
-              <div>
-                <p className="font-medium">Fallback Behavior</p>
-                <p className="text-indigo-700">If no match found, AI says "I'm not sure" and offers to collect contact details</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {products.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>{product.category || "-"}</TableCell>
+                        <TableCell>{product.price || "-"}</TableCell>
+                        <TableCell>
+                          <Badge className={product.is_active ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-800"}>
+                            {product.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => toggleProduct(product.id, product.is_active)}
+                            >
+                              {product.is_active ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => deleteProduct(product.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {products.length === 0 && (
+                  <div className="text-center py-12 text-slate-500">
+                    No products added yet
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );
