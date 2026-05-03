@@ -93,10 +93,10 @@ export default function DashboardPage() {
 
       // Leads by channel
       const leadsByChannel = {
-        website: leads?.filter(l => l.metadata?.channel === "website" || !l.metadata?.channel).length || 0,
-        instagram: leads?.filter(l => l.metadata?.channel === "instagram").length || 0,
-        facebook: leads?.filter(l => l.metadata?.channel === "facebook").length || 0,
-        whatsapp: leads?.filter(l => l.metadata?.channel === "whatsapp").length || 0,
+        website: leads?.filter(l => (l.metadata as any)?.channel === "website" || !(l.metadata as any)?.channel).length || 0,
+        instagram: leads?.filter(l => (l.metadata as any)?.channel === "instagram").length || 0,
+        facebook: leads?.filter(l => (l.metadata as any)?.channel === "facebook").length || 0,
+        whatsapp: leads?.filter(l => (l.metadata as any)?.channel === "whatsapp").length || 0,
       };
 
       setStats({
