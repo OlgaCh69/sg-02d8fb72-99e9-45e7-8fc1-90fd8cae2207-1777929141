@@ -59,21 +59,38 @@ export default function RegisterPage() {
         // Wait a moment for trigger to create profile
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Update profile with additional business details
-        const { error: profileError } = await supabase
+        // Check if profile exists, if not create it
+        const { data: existingProfile } = await supabase
           .from("profiles")
-          .update({
+          .select("id")
+          .eq("id", authData.user.id)
+          .single();
+
+        if (!existingProfile) {
+          // Trigger didn't work, create profile manually
+          await supabase.from("profiles").insert({
+            id: authData.user.id,
+            email: formData.email,
+            admin_role: "admin",
             full_name: formData.fullName,
             company_name: formData.companyName,
             phone: formData.phone,
             website: formData.website,
             industry: formData.industry,
-            admin_role: "admin",
-          })
-          .eq("id", authData.user.id);
-
-        if (profileError) {
-          console.error("Profile update error:", profileError);
+          });
+        } else {
+          // Update profile with additional business details
+          await supabase
+            .from("profiles")
+            .update({
+              full_name: formData.fullName,
+              company_name: formData.companyName,
+              phone: formData.phone,
+              website: formData.website,
+              industry: formData.industry,
+              admin_role: "admin",
+            })
+            .eq("id", authData.user.id);
         }
 
         // Check if widget settings exist, create if not
