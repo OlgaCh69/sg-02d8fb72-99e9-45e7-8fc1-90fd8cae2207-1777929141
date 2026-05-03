@@ -1,6 +1,6 @@
 ---
 title: Database Schema & Authentication
-status: in_progress
+status: done
 priority: urgent
 type: feature
 tags: [database, auth, backend]
@@ -22,9 +22,10 @@ Create complete database schema for AI assistant system: conversations, messages
 - [x] Add admin_role field to profiles table
 - [x] Set up RLS policies for all tables
 - [x] Seed initial knowledge base entries
-- [ ] Create admin user account
+- [x] Create admin user account
 
 ## Acceptance
 - All tables created with proper relationships
 - RLS policies allow admin access, protect user data
 - Sample knowledge base entries exist
+- Admin can login with default credentials

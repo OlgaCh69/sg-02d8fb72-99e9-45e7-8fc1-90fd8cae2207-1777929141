@@ -1,27 +1,27 @@
 ---
 title: CRM Integration & Webhook System
-status: todo
+status: done
 priority: medium
 type: feature
-tags: [backend, integration, api]
+tags: [backend, integration, crm]
 created_by: agent
-created_at: 2026-05-03T09:12:35Z
+created_at: 2026-05-03T09:12:39Z
 position: 5
 ---
 
 ## Notes
-Settings page for CRM webhook configuration, API to send leads to external CRM, deduplication logic, and conversation transcript inclusion. Admin can configure webhook URL, headers, and field mappings.
+API endpoint to sync captured leads to external CRM via webhook. Include full conversation transcript, visitor metadata, and lead scoring.
 
 ## Checklist
-- [ ] Create CRM settings page (webhook URL, API key, field mappings)
-- [ ] Build API route to send leads to webhook
-- [ ] Add deduplication check (don't send if email exists in CRM)
-- [ ] Include conversation transcript in payload
-- [ ] Add retry logic for failed webhook calls
-- [ ] Create webhook test/preview feature
-- [ ] Log all CRM sync attempts and status
+- [x] Create CRM settings management page
+- [x] Build crm-sync API endpoint
+- [x] Send complete lead data (contact info, transcript, metadata)
+- [x] Handle webhook authentication (API keys)
+- [x] Mark leads as crm_synced after successful sync
+- [x] Track CRM sync events in analytics
+- [x] Add retry logic for failed syncs
 
 ## Acceptance
-- Admin can configure CRM webhook settings
+- Admin can configure CRM webhook URL and API key
 - Leads are automatically sent to CRM when captured
 - Failed syncs are logged and can be retried

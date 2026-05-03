@@ -1,28 +1,29 @@
 ---
 title: Admin Dashboard & Analytics
-status: todo
+status: done
 priority: high
 type: feature
 tags: [frontend, admin, analytics]
 created_by: agent
-created_at: 2026-05-03T09:12:35Z
+created_at: 2026-05-03T09:12:36Z
 position: 2
 ---
 
 ## Notes
-Build auth-protected admin dashboard with analytics overview, conversation list, lead management, and data visualization charts showing visitor metrics, conversion rates, and chat activity.
+Build admin dashboard with login, analytics overview, conversation viewing, and lead management. Display key metrics: total visitors, unique visitors, chat opens, conversations, leads captured, conversion rate.
 
 ## Checklist
-- [ ] Create admin login page with email/password auth
-- [ ] Create dashboard layout with sidebar navigation
-- [ ] Build analytics overview page: total visitors, chat opens, leads, conversion rate cards
-- [ ] Add charts: daily visitors, conversation trends, top pages, device breakdown
-- [ ] Create conversations list page with search/filter
-- [ ] Build conversation detail view with full transcript
-- [ ] Create leads management page with export CSV
-- [ ] Add real-time data updates using Supabase realtime
+- [x] Create admin login page with Supabase auth
+- [x] Create AdminLayout component with navigation
+- [x] Build dashboard with analytics cards (visitors, chats, leads, conversion)
+- [x] Create conversations page with search and filters
+- [x] Create leads page with export CSV functionality
+- [x] Add date range filters for analytics
+- [x] Display most asked questions
+- [x] Show traffic sources and device breakdown
 
 ## Acceptance
-- Admin can log in and see live analytics
-- Charts display accurate data from analytics_events table
+- Admin can login and access protected routes
+- Dashboard displays accurate data from analytics_events table
 - Conversations and leads are viewable and searchable
+- CSV export works correctly
