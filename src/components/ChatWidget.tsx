@@ -31,6 +31,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     company: "",
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [triggerFired, setTriggerFired] = useState(false);
 
   useEffect(() => {
     initializeWidget();
@@ -40,6 +41,13 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    // Check for proactive triggers
+    if (!triggerFired && !isOpen && settings?.is_enabled) {
+      checkProactiveTriggers();
+    }
+  }, [triggerFired, isOpen, settings]);
 
   const initializeWidget = () => {
     let visitor = localStorage.getItem("ai_visitor_id");
@@ -63,6 +71,60 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     }
   };
 
+  const checkProactiveTriggers = async () => {
+    try {
+      const { data: triggers } = await supabase
+        .from("trigger_settings")
+        .select("*")
+        .eq("enabled", true);
+
+      if (!triggers || triggers.length === 0) return;
+
+      const currentPath = window.location.pathname;
+
+      for (const trigger of triggers) {
+        // Check if page matches
+        if (trigger.page_match_pattern && !currentPath.includes(trigger.page_match_pattern)) {
+          continue;
+        }
+
+        if (trigger.trigger_type === "time_delay" && trigger.trigger_value) {
+          setTimeout(() => {
+            if (!isOpen && !triggerFired) {
+              handleOpen("time_based");
+              setTriggerFired(true);
+            }
+          }, trigger.trigger_value * 1000);
+        }
+
+        if (trigger.trigger_type === "scroll_percentage" && trigger.trigger_value) {
+          const handleScroll = () => {
+            const scrollPercent = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+            if (scrollPercent >= trigger.trigger_value && !isOpen && !triggerFired) {
+              handleOpen("scroll_based");
+              setTriggerFired(true);
+              window.removeEventListener("scroll", handleScroll);
+            }
+          };
+          window.addEventListener("scroll", handleScroll);
+        }
+
+        if (trigger.trigger_type === "exit_intent") {
+          const handleMouseLeave = (e: MouseEvent) => {
+            if (e.clientY <= 0 && !isOpen && !triggerFired) {
+              handleOpen("exit_intent");
+              setTriggerFired(true);
+              document.removeEventListener("mouseleave", handleMouseLeave);
+            }
+          };
+          document.addEventListener("mouseleave", handleMouseLeave);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking triggers:", error);
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -81,17 +143,24 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     }
   };
 
-  const handleOpen = async () => {
+  const handleOpen = async (triggerType: string = "manual") => {
     setIsOpen(true);
     await trackEvent("chat_opened");
 
     if (!conversationId) {
+      // Get page context
+      const pageTitle = document.title;
+      const referrer = document.referrer;
+
       const { data } = await supabase
         .from("conversations")
         .insert({
           visitor_id: visitorId,
           session_id: sessionId,
           page_url: window.location.href,
+          page_title: pageTitle,
+          referrer: referrer || null,
+          trigger_type: triggerType,
           status: "active",
           device: /mobile/i.test(navigator.userAgent) ? "mobile" : "desktop",
           browser: navigator.userAgent.split(" ").pop() || "unknown",
@@ -102,9 +171,27 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       if (data) {
         setConversationId(data.id);
         
-        // Check if we know this user
+        // Check for page-specific rules
         let greeting = settings?.welcome_message || "Hi! How can I help you today?";
         try {
+          const currentPath = window.location.pathname;
+          const { data: pageRules } = await supabase
+            .from("page_rules")
+            .select("*")
+            .eq("enabled", true);
+
+          if (pageRules && pageRules.length > 0) {
+            for (const rule of pageRules) {
+              if (currentPath.includes(rule.page_pattern)) {
+                if (rule.custom_welcome_message) {
+                  greeting = rule.custom_welcome_message;
+                }
+                break;
+              }
+            }
+          }
+
+          // Check if we know this user
           const { data: profiles } = await supabase
             .from("user_profiles")
             .select("full_name")
@@ -112,12 +199,12 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
             .limit(1);
           
           if (profiles && profiles.length > 0 && profiles[0].full_name) {
-            greeting = `Welcome back, ${profiles[0].full_name.split(' ')[0]}! How can I help you today?`;
+            greeting = `Welcome back, ${profiles[0].full_name.split(' ')[0]}! ${greeting}`;
           } else if (profiles && profiles.length > 0) {
-            greeting = `Welcome back! How can I help you today?`;
+            greeting = `Welcome back! ${greeting}`;
           }
         } catch (e) {
-          console.error("Failed to check returning user", e);
+          console.error("Failed to check page rules or returning user", e);
         }
 
         const msg: Message = {

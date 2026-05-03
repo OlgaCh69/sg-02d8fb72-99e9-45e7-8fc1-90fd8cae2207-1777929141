@@ -161,16 +161,23 @@ export type Database = {
           created_at: string | null
           device: string | null
           ended_at: string | null
+          human_handover_at: string | null
+          human_handover_requested: boolean | null
           id: string
           memory_consent: boolean | null
           metadata: Json | null
           needs_summary: boolean | null
+          page_title: string | null
           page_url: string | null
           referrer: string | null
+          resolved: boolean | null
+          resolved_at: string | null
+          resolved_by: string | null
           session_id: string
           started_at: string | null
           status: string | null
           summary_generated_at: string | null
+          trigger_type: string | null
           user_profile_id: string | null
           visitor_id: string
         }
@@ -181,16 +188,23 @@ export type Database = {
           created_at?: string | null
           device?: string | null
           ended_at?: string | null
+          human_handover_at?: string | null
+          human_handover_requested?: boolean | null
           id?: string
           memory_consent?: boolean | null
           metadata?: Json | null
           needs_summary?: boolean | null
+          page_title?: string | null
           page_url?: string | null
           referrer?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           session_id: string
           started_at?: string | null
           status?: string | null
           summary_generated_at?: string | null
+          trigger_type?: string | null
           user_profile_id?: string | null
           visitor_id: string
         }
@@ -201,20 +215,34 @@ export type Database = {
           created_at?: string | null
           device?: string | null
           ended_at?: string | null
+          human_handover_at?: string | null
+          human_handover_requested?: boolean | null
           id?: string
           memory_consent?: boolean | null
           metadata?: Json | null
           needs_summary?: boolean | null
+          page_title?: string | null
           page_url?: string | null
           referrer?: string | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           session_id?: string
           started_at?: string | null
           status?: string | null
           summary_generated_at?: string | null
+          trigger_type?: string | null
           user_profile_id?: string | null
           visitor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_user_profile_id_fkey"
             columns: ["user_profile_id"]
@@ -524,6 +552,39 @@ export type Database = {
           },
         ]
       }
+      page_rules: {
+        Row: {
+          created_at: string | null
+          custom_tone: string | null
+          custom_welcome_message: string | null
+          enabled: boolean | null
+          id: string
+          page_pattern: string
+          priority_questions: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          custom_tone?: string | null
+          custom_welcome_message?: string | null
+          enabled?: boolean | null
+          id?: string
+          page_pattern: string
+          priority_questions?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          custom_tone?: string | null
+          custom_welcome_message?: string | null
+          enabled?: boolean | null
+          id?: string
+          page_pattern?: string
+          priority_questions?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string | null
@@ -650,6 +711,36 @@ export type Database = {
           profile_pic_url?: string | null
           updated_at?: string | null
           username?: string | null
+        }
+        Relationships: []
+      }
+      trigger_settings: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          page_match_pattern: string | null
+          trigger_type: string
+          trigger_value: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          page_match_pattern?: string | null
+          trigger_type: string
+          trigger_value?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          page_match_pattern?: string | null
+          trigger_type?: string
+          trigger_value?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
