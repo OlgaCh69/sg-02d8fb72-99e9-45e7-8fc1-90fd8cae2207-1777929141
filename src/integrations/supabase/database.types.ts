@@ -18,44 +18,69 @@ export type Database = {
       analytics_events: {
         Row: {
           browser: string | null
+          conversation_id: string | null
           country: string | null
           device: string | null
-          event_type: string
+          event_name: string
           id: string
           metadata: Json | null
           page_url: string | null
           referrer: string | null
-          session_id: string
+          session_id: string | null
           timestamp: string | null
-          visitor_id: string
+          visitor_profile_id: string | null
         }
         Insert: {
           browser?: string | null
+          conversation_id?: string | null
           country?: string | null
           device?: string | null
-          event_type: string
+          event_name: string
           id?: string
           metadata?: Json | null
           page_url?: string | null
           referrer?: string | null
-          session_id: string
+          session_id?: string | null
           timestamp?: string | null
-          visitor_id: string
+          visitor_profile_id?: string | null
         }
         Update: {
           browser?: string | null
+          conversation_id?: string | null
           country?: string | null
           device?: string | null
-          event_type?: string
+          event_name?: string
           id?: string
           metadata?: Json | null
           page_url?: string | null
           referrer?: string | null
-          session_id?: string
+          session_id?: string | null
           timestamp?: string | null
-          visitor_id?: string
+          visitor_profile_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_visitor_profile_id_fkey"
+            columns: ["visitor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       channel_settings: {
         Row: {
@@ -104,37 +129,52 @@ export type Database = {
       }
       conversation_summaries: {
         Row: {
+          budget: string | null
           conversation_id: string | null
           created_at: string | null
           extracted_data: Json | null
           id: string
           intent: string | null
-          key_points: Json | null
-          sentiment: string | null
-          summary: string
-          user_profile_id: string | null
+          next_step: string | null
+          objections: string | null
+          service_interest: string | null
+          summary: string | null
+          timeline: string | null
+          updated_at: string | null
+          urgency: string | null
+          visitor_profile_id: string | null
         }
         Insert: {
+          budget?: string | null
           conversation_id?: string | null
           created_at?: string | null
           extracted_data?: Json | null
           id?: string
           intent?: string | null
-          key_points?: Json | null
-          sentiment?: string | null
-          summary: string
-          user_profile_id?: string | null
+          next_step?: string | null
+          objections?: string | null
+          service_interest?: string | null
+          summary?: string | null
+          timeline?: string | null
+          updated_at?: string | null
+          urgency?: string | null
+          visitor_profile_id?: string | null
         }
         Update: {
+          budget?: string | null
           conversation_id?: string | null
           created_at?: string | null
           extracted_data?: Json | null
           id?: string
           intent?: string | null
-          key_points?: Json | null
-          sentiment?: string | null
-          summary?: string
-          user_profile_id?: string | null
+          next_step?: string | null
+          objections?: string | null
+          service_interest?: string | null
+          summary?: string | null
+          timeline?: string | null
+          updated_at?: string | null
+          urgency?: string | null
+          visitor_profile_id?: string | null
         }
         Relationships: [
           {
@@ -145,10 +185,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "conversation_summaries_user_profile_id_fkey"
-            columns: ["user_profile_id"]
+            foreignKeyName: "conversation_summaries_visitor_profile_id_fkey"
+            columns: ["visitor_profile_id"]
             isOneToOne: false
-            referencedRelation: "user_profiles"
+            referencedRelation: "visitor_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -159,6 +199,9 @@ export type Database = {
           channel: string | null
           country: string | null
           created_at: string | null
+          crm_sync_error: string | null
+          crm_sync_status: string | null
+          crm_synced: boolean | null
           device: string | null
           ended_at: string | null
           handover_reason: string | null
@@ -176,19 +219,21 @@ export type Database = {
           resolved: boolean | null
           resolved_at: string | null
           resolved_by: string | null
-          session_id: string
+          session_id: string | null
           started_at: string | null
           status: string | null
           summary_generated_at: string | null
           trigger_type: string | null
-          user_profile_id: string | null
-          visitor_id: string
+          visitor_profile_id: string | null
         }
         Insert: {
           browser?: string | null
           channel?: string | null
           country?: string | null
           created_at?: string | null
+          crm_sync_error?: string | null
+          crm_sync_status?: string | null
+          crm_synced?: boolean | null
           device?: string | null
           ended_at?: string | null
           handover_reason?: string | null
@@ -206,19 +251,21 @@ export type Database = {
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
-          session_id: string
+          session_id?: string | null
           started_at?: string | null
           status?: string | null
           summary_generated_at?: string | null
           trigger_type?: string | null
-          user_profile_id?: string | null
-          visitor_id: string
+          visitor_profile_id?: string | null
         }
         Update: {
           browser?: string | null
           channel?: string | null
           country?: string | null
           created_at?: string | null
+          crm_sync_error?: string | null
+          crm_sync_status?: string | null
+          crm_synced?: boolean | null
           device?: string | null
           ended_at?: string | null
           handover_reason?: string | null
@@ -236,13 +283,12 @@ export type Database = {
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
-          session_id?: string
+          session_id?: string | null
           started_at?: string | null
           status?: string | null
           summary_generated_at?: string | null
           trigger_type?: string | null
-          user_profile_id?: string | null
-          visitor_id?: string
+          visitor_profile_id?: string | null
         }
         Relationships: [
           {
@@ -253,10 +299,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "conversations_user_profile_id_fkey"
-            columns: ["user_profile_id"]
+            foreignKeyName: "conversations_session_id_fkey"
+            columns: ["session_id"]
             isOneToOne: false
-            referencedRelation: "user_profiles"
+            referencedRelation: "visitor_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_visitor_profile_id_fkey"
+            columns: ["visitor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -378,6 +431,51 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_sync_logs: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          status: string | null
+          visitor_profile_id: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          status?: string | null
+          visitor_profile_id?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          status?: string | null
+          visitor_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sync_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_sync_logs_visitor_profile_id_fkey"
+            columns: ["visitor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           content: string | null
@@ -467,6 +565,54 @@ export type Database = {
           question?: string
           updated_at?: string | null
           usage_count?: number | null
+        }
+        Relationships: []
+      }
+      knowledge_sources: {
+        Row: {
+          approved: boolean | null
+          content: string | null
+          content_hash: string | null
+          created_at: string | null
+          id: string
+          last_crawled: string | null
+          last_crawled_at: string | null
+          meta_description: string | null
+          source_type: string | null
+          title: string | null
+          updated_at: string | null
+          url: string
+          word_count: number | null
+        }
+        Insert: {
+          approved?: boolean | null
+          content?: string | null
+          content_hash?: string | null
+          created_at?: string | null
+          id?: string
+          last_crawled?: string | null
+          last_crawled_at?: string | null
+          meta_description?: string | null
+          source_type?: string | null
+          title?: string | null
+          updated_at?: string | null
+          url: string
+          word_count?: number | null
+        }
+        Update: {
+          approved?: boolean | null
+          content?: string | null
+          content_hash?: string | null
+          created_at?: string | null
+          id?: string
+          last_crawled?: string | null
+          last_crawled_at?: string | null
+          meta_description?: string | null
+          source_type?: string | null
+          title?: string | null
+          updated_at?: string | null
+          url?: string
+          word_count?: number | null
         }
         Relationships: []
       }
@@ -860,47 +1006,175 @@ export type Database = {
         }
         Relationships: []
       }
-      website_pages: {
+      visitor_memory: {
         Row: {
-          content: string | null
-          content_hash: string | null
+          confidence: number | null
           created_at: string | null
           id: string
-          last_crawled: string | null
-          meta_description: string | null
-          status: string | null
-          title: string | null
+          is_active: boolean | null
+          key: string
+          memory_type: string
+          source_conversation_id: string | null
           updated_at: string | null
-          url: string
-          word_count: number | null
+          value: string | null
+          visitor_profile_id: string | null
         }
         Insert: {
-          content?: string | null
-          content_hash?: string | null
+          confidence?: number | null
           created_at?: string | null
           id?: string
-          last_crawled?: string | null
-          meta_description?: string | null
-          status?: string | null
-          title?: string | null
+          is_active?: boolean | null
+          key: string
+          memory_type: string
+          source_conversation_id?: string | null
           updated_at?: string | null
-          url: string
-          word_count?: number | null
+          value?: string | null
+          visitor_profile_id?: string | null
         }
         Update: {
-          content?: string | null
-          content_hash?: string | null
+          confidence?: number | null
           created_at?: string | null
           id?: string
-          last_crawled?: string | null
-          meta_description?: string | null
-          status?: string | null
-          title?: string | null
+          is_active?: boolean | null
+          key?: string
+          memory_type?: string
+          source_conversation_id?: string | null
           updated_at?: string | null
-          url?: string
-          word_count?: number | null
+          value?: string | null
+          visitor_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_memory_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitor_memory_visitor_profile_id_fkey"
+            columns: ["visitor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visitor_profiles: {
+        Row: {
+          company: string | null
+          consent_analytics: boolean | null
+          consent_memory: boolean | null
+          created_at: string | null
+          email: string | null
+          first_seen_at: string | null
+          id: string
+          last_seen_at: string | null
+          lead_score: number | null
+          lead_status: string | null
+          name: string | null
+          phone: string | null
+          preferred_language: string | null
+          source: string | null
+          updated_at: string | null
+          visitor_id: string
+        }
+        Insert: {
+          company?: string | null
+          consent_analytics?: boolean | null
+          consent_memory?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          first_seen_at?: string | null
+          id?: string
+          last_seen_at?: string | null
+          lead_score?: number | null
+          lead_status?: string | null
+          name?: string | null
+          phone?: string | null
+          preferred_language?: string | null
+          source?: string | null
+          updated_at?: string | null
+          visitor_id: string
+        }
+        Update: {
+          company?: string | null
+          consent_analytics?: boolean | null
+          consent_memory?: boolean | null
+          created_at?: string | null
+          email?: string | null
+          first_seen_at?: string | null
+          id?: string
+          last_seen_at?: string | null
+          lead_score?: number | null
+          lead_status?: string | null
+          name?: string | null
+          phone?: string | null
+          preferred_language?: string | null
+          source?: string | null
+          updated_at?: string | null
+          visitor_id?: string
         }
         Relationships: []
+      }
+      visitor_sessions: {
+        Row: {
+          browser: string | null
+          country: string | null
+          device: string | null
+          ended_at: string | null
+          id: string
+          page_title: string | null
+          page_url: string | null
+          pages_visited: Json | null
+          referrer: string | null
+          session_id: string
+          started_at: string | null
+          time_on_site: number | null
+          trigger_type: string | null
+          visitor_profile_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          country?: string | null
+          device?: string | null
+          ended_at?: string | null
+          id?: string
+          page_title?: string | null
+          page_url?: string | null
+          pages_visited?: Json | null
+          referrer?: string | null
+          session_id: string
+          started_at?: string | null
+          time_on_site?: number | null
+          trigger_type?: string | null
+          visitor_profile_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          country?: string | null
+          device?: string | null
+          ended_at?: string | null
+          id?: string
+          page_title?: string | null
+          page_url?: string | null
+          pages_visited?: Json | null
+          referrer?: string | null
+          session_id?: string
+          started_at?: string | null
+          time_on_site?: number | null
+          trigger_type?: string | null
+          visitor_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_sessions_visitor_profile_id_fkey"
+            columns: ["visitor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       widget_settings: {
         Row: {

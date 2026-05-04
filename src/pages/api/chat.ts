@@ -24,7 +24,7 @@ export default async function handler(
       // Link conversation to profile
       await supabase
         .from("conversations")
-        .update({ user_profile_id: profile.id })
+        .update({ visitor_profile_id: profile.id })
         .eq("id", conversationId);
 
       const memory = await getUserMemory(profile.id);
@@ -68,9 +68,10 @@ export default async function handler(
     // 3. Check approved Website Pages if no KB match
     if (!foundAnswer && questionWords.length > 0) {
       const { data: websitePages } = await supabase
-        .from("website_pages")
+        .from("knowledge_sources")
         .select("title, content, url")
-        .eq("status", "approved");
+        .eq("source_type", "website")
+        .eq("approved", true);
 
       if (websitePages && websitePages.length > 0) {
         let bestScore = 0;

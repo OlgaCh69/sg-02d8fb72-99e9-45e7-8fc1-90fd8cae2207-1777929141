@@ -42,8 +42,8 @@ type WebsitePage = {
   title: string;
   content: string;
   word_count: number;
-  status: string;
-  last_crawled: string;
+  approved: boolean;
+  last_crawled_at: string;
 };
 
 type CrawlLog = {
@@ -107,9 +107,9 @@ export default function WebsiteSyncPage() {
     }
 
     const { data: pagesData } = await supabase
-      .from("website_pages")
+      .from("knowledge_sources")
       .select("*")
-      .order("last_crawled", { ascending: false })
+      .order("last_crawled_at", { ascending: false })
       .limit(50);
 
     if (pagesData) setPages(pagesData);
@@ -183,11 +183,11 @@ export default function WebsiteSyncPage() {
   const handlePageAction = async (pageId: string, action: "approve" | "exclude" | "delete") => {
     if (action === "delete") {
       if (!confirm("Are you sure you want to delete this page?")) return;
-      await supabase.from("website_pages").delete().eq("id", pageId);
+      await supabase.from("knowledge_sources").delete().eq("id", pageId);
     } else {
       await supabase
-        .from("website_pages")
-        .update({ status: action === "approve" ? "approved" : "excluded" })
+        .from("knowledge_sources")
+        .update({ approved: action === "approve" })
         .eq("id", pageId);
     }
     loadData();
@@ -195,9 +195,9 @@ export default function WebsiteSyncPage() {
 
   const stats = {
     total: pages.length,
-    approved: pages.filter(p => p.status === "approved").length,
-    pending: pages.filter(p => p.status === "pending").length,
-    excluded: pages.filter(p => p.status === "excluded").length,
+    approved: pages.filter(p => p.approved === true).length,
+    pending: pages.filter(p => p.approved === false).length,
+    excluded: 0,
   };
 
   return (
@@ -361,27 +361,25 @@ export default function WebsiteSyncPage() {
                         <h3 className="font-medium">{page.title || "Untitled"}</h3>
                         <Badge
                           variant={
-                            page.status === "approved"
+                            page.approved
                               ? "default"
-                              : page.status === "excluded"
-                              ? "secondary"
                               : "outline"
                           }
                         >
-                          {page.status}
+                          {page.approved ? "approved" : "pending"}
                         </Badge>
                       </div>
                       <p className="text-sm text-slate-600 mb-2">{page.url}</p>
                       <div className="flex gap-4 text-xs text-slate-500">
                         <span>{page.word_count} words</span>
                         <span>
-                          Last crawled: {new Date(page.last_crawled).toLocaleDateString()}
+                          Last crawled: {page.last_crawled_at ? new Date(page.last_crawled_at).toLocaleDateString() : 'Never'}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
-                      {page.status !== "approved" && (
+                      {!page.approved && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -391,7 +389,7 @@ export default function WebsiteSyncPage() {
                           <Eye className="h-4 w-4" />
                         </Button>
                       )}
-                      {page.status !== "excluded" && (
+                      {page.approved && (
                         <Button
                           size="sm"
                           variant="outline"

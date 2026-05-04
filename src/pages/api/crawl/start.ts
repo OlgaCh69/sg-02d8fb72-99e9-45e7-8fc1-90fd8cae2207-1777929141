@@ -172,7 +172,7 @@ export default async function handler(
 
         // Check if page exists
         const { data: existingPage } = await supabase
-          .from("website_pages")
+          .from("knowledge_sources")
           .select("id, content_hash")
           .eq("url", url)
           .single();
@@ -181,14 +181,12 @@ export default async function handler(
           // Update only if content changed
           if (existingPage.content_hash !== contentHash) {
             await supabase
-              .from("website_pages")
+              .from("knowledge_sources")
               .update({
                 title,
                 content,
                 content_hash: contentHash,
-                meta_description: metaDescription,
-                word_count: wordCount,
-                last_crawled: new Date().toISOString(),
+                last_crawled_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
               })
               .eq("id", existingPage.id);
@@ -196,14 +194,13 @@ export default async function handler(
           }
         } else {
           // Insert new page
-          await supabase.from("website_pages").insert({
+          await supabase.from("knowledge_sources").insert({
             url,
             title,
             content,
             content_hash: contentHash,
-            meta_description: metaDescription,
-            word_count: wordCount,
-            status: "pending",
+            approved: false,
+            last_crawled_at: new Date().toISOString(),
           });
           pagesNew++;
         }

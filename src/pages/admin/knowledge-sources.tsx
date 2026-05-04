@@ -89,7 +89,7 @@ export default function KnowledgeSourcesPage() {
     try {
       const [kb, pages, docs, prods] = await Promise.all([
         supabase.from("knowledge_base").select("id, is_active"),
-        supabase.from("website_pages").select("id, status"),
+        supabase.from("knowledge_sources").select("id, approved").eq("source_type", "website"),
         supabase.from("documents").select("id, status"),
         supabase.from("products").select("id, is_active"),
       ]);
@@ -101,8 +101,8 @@ export default function KnowledgeSourcesPage() {
         },
         websitePages: {
           total: pages.data?.length || 0,
-          approved: pages.data?.filter(p => p.status === "approved").length || 0,
-          pending: pages.data?.filter(p => p.status === "pending").length || 0,
+          approved: pages.data?.filter(p => p.approved === true).length || 0,
+          pending: pages.data?.filter(p => p.approved === false).length || 0,
         },
         documents: {
           total: docs.data?.length || 0,
