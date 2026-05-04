@@ -10,7 +10,7 @@ export default async function handler(
   }
 
   try {
-    const { category } = req.query;
+    const category = req.query.category as string;
 
     // Get active template for category
     const { data: template } = await supabase

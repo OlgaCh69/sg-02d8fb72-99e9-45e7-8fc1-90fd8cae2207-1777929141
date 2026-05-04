@@ -46,7 +46,7 @@ type PromptVersion = {
   system_instructions: string;
   temperature: number;
   max_tokens: number;
-  variables: any[];
+  variables: any;
   is_published: boolean;
   created_at: string;
 };
