@@ -76,6 +76,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
 
             <Link
+              href="/admin/team-inbox"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/team-inbox"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <MessageSquare className="h-5 w-5" />
+              Team Inbox
+            </Link>
+
+            <Link
               href="/admin/leads"
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                 router.pathname === "/admin/leads"
