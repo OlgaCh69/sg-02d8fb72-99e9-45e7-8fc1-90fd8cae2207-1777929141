@@ -452,6 +452,51 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_configs: {
+        Row: {
+          access_token: string | null
+          app_secret: string | null
+          channel_type: string
+          config: Json | null
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          page_id: string | null
+          phone_number_id: string | null
+          updated_at: string | null
+          verify_token: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          app_secret?: string | null
+          channel_type: string
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          page_id?: string | null
+          phone_number_id?: string | null
+          updated_at?: string | null
+          verify_token?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          app_secret?: string | null
+          channel_type?: string
+          config?: Json | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          page_id?: string | null
+          phone_number_id?: string | null
+          updated_at?: string | null
+          verify_token?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       channel_settings: {
         Row: {
           access_token: string | null

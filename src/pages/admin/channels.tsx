@@ -82,7 +82,7 @@ export default function ChannelsPage() {
 
   const loadChannels = async () => {
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("channel_configs")
         .select("*");
 
@@ -111,7 +111,7 @@ export default function ChannelsPage() {
       const channel = channels[channelType];
 
       if (channel.id) {
-        await supabase
+        await (supabase as any)
           .from("channel_configs")
           .update({
             is_enabled: channel.is_enabled,
@@ -125,7 +125,7 @@ export default function ChannelsPage() {
           })
           .eq("id", channel.id);
       } else {
-        await supabase
+        await (supabase as any)
           .from("channel_configs")
           .insert({
             channel_type: channelType,
