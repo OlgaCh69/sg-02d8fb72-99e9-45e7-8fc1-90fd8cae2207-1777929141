@@ -16,6 +16,8 @@ import {
   Zap,
   Database,
   MessageCircle,
+  BarChart3,
+  TestTube,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -183,6 +185,30 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             >
               <Layers className="h-5 w-5" />
               A/B Tests
+            </Link>
+
+            <Link
+              href="/admin/reports"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/reports"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <BarChart3 className="h-5 w-5" />
+              Reports
+            </Link>
+
+            <Link
+              href="/admin/testing"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/testing"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <TestTube className="h-5 w-5" />
+              Testing
             </Link>
 
             <Link
