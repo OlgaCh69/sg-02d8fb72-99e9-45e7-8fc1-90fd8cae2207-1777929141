@@ -13,7 +13,7 @@ export function SEOElements({
   title = "O.N.E.Tech AI Assistant - Capture & Convert More Leads Automatically",
   description = "AI-powered chat assistant that helps businesses capture, qualify, and convert website visitors into leads 24/7. Built by O.N.E.Tech Automation.",
   image = "/og-image.png",
-  url = "https://onetechautomation.com",
+  url,
 }: SEOProps): ReactElement {
   return (
     <>
