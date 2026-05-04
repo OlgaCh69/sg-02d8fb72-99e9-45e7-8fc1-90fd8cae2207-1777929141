@@ -19,7 +19,7 @@ export default function PlaybooksPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    intent_pattern: "",
+    intent_trigger: "",
     description: "",
     flow_steps: "[]",
     is_active: true,
@@ -68,7 +68,7 @@ export default function PlaybooksPage() {
           .from("playbooks")
           .update({
             name: formData.name,
-            intent_pattern: formData.intent_pattern,
+            intent_trigger: formData.intent_trigger,
             description: formData.description,
             flow_steps: parsedSteps,
             is_active: formData.is_active,
@@ -77,7 +77,7 @@ export default function PlaybooksPage() {
       } else {
         await supabase.from("playbooks").insert({
           name: formData.name,
-          intent_pattern: formData.intent_pattern,
+          intent_trigger: formData.intent_trigger,
           description: formData.description,
           flow_steps: parsedSteps,
           is_active: formData.is_active,
@@ -88,7 +88,7 @@ export default function PlaybooksPage() {
       setEditingId(null);
       setFormData({
         name: "",
-        intent_pattern: "",
+        intent_trigger: "",
         description: "",
         flow_steps: "[]",
         is_active: true,
@@ -103,7 +103,7 @@ export default function PlaybooksPage() {
     setEditingId(playbook.id);
     setFormData({
       name: playbook.name,
-      intent_pattern: playbook.intent_pattern,
+      intent_trigger: playbook.intent_trigger || "",
       description: playbook.description || "",
       flow_steps: JSON.stringify(playbook.flow_steps, null, 2),
       is_active: playbook.is_active,
@@ -170,8 +170,8 @@ export default function PlaybooksPage() {
                 <label className="text-sm font-medium">Intent Pattern</label>
                 <Input
                   placeholder="e.g., pricing_inquiry, demo_request"
-                  value={formData.intent_pattern}
-                  onChange={(e) => setFormData({ ...formData, intent_pattern: e.target.value })}
+                  value={formData.intent_trigger}
+                  onChange={(e) => setFormData({ ...formData, intent_trigger: e.target.value })}
                 />
               </div>
 
@@ -234,7 +234,7 @@ export default function PlaybooksPage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-slate-600 mb-2">
-                      Intent: <code className="bg-slate-100 px-1 py-0.5 rounded">{playbook.intent_pattern}</code>
+                      Intent: <code className="bg-slate-100 px-1 py-0.5 rounded">{playbook.intent_trigger || "N/A"}</code>
                     </p>
                     {playbook.description && (
                       <p className="text-sm text-slate-600 mb-3">{playbook.description}</p>

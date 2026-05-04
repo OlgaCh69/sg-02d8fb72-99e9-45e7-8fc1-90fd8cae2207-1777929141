@@ -86,6 +86,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ab_tests: {
+        Row: {
+          conversions_a: number | null
+          conversions_b: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          test_type: string
+          variant_a_config: Json
+          variant_b_config: Json
+          visitors_a: number | null
+          visitors_b: number | null
+        }
+        Insert: {
+          conversions_a?: number | null
+          conversions_b?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          test_type: string
+          variant_a_config: Json
+          variant_b_config: Json
+          visitors_a?: number | null
+          visitors_b?: number | null
+        }
+        Update: {
+          conversions_a?: number | null
+          conversions_b?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          test_type?: string
+          variant_a_config?: Json
+          variant_b_config?: Json
+          visitors_a?: number | null
+          visitors_b?: number | null
+        }
+        Relationships: []
+      }
       abuse_reports: {
         Row: {
           abuse_type: string | null
