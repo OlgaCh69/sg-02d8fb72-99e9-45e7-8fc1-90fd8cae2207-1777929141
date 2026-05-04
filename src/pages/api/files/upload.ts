@@ -43,6 +43,16 @@ export default async function handler(
       return res.status(403).json({ error: "File uploads are disabled" });
     }
 
+    const { data: profile } = await supabase
+      .from("visitor_profiles")
+      .select("id")
+      .eq("visitor_id", visitorId)
+      .single();
+
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
     // Read file and upload to Supabase Storage
     const fileBuffer = fs.readFileSync(uploadedFile.filepath);
     const fileName = `${Date.now()}_${uploadedFile.originalFilename}`;
@@ -69,7 +79,7 @@ export default async function handler(
       .from("uploaded_files")
       .insert({
         conversation_id: conversationId,
-        visitor_id: visitorId,
+        visitor_profile_id: profile.id,
         file_name: uploadedFile.originalFilename || fileName,
         file_type: uploadedFile.mimetype || "unknown",
         file_size: uploadedFile.size,
