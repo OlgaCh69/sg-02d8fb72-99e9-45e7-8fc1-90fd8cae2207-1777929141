@@ -22,6 +22,7 @@ import {
   Sun,
   Monitor,
   Sparkles,
+  Radio,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -40,6 +41,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const navItems = [
     { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/conversations", icon: MessageSquare, label: "Conversations" },
+    { href: "/admin/live-chat", icon: Radio, label: "Live Chat" },
     { href: "/admin/visitor-profiles", icon: Users, label: "Visitor Profiles" },
     { href: "/admin/team-inbox", icon: MessageSquare, label: "Team Inbox" },
     { href: "/admin/leads", icon: Users, label: "Leads" },

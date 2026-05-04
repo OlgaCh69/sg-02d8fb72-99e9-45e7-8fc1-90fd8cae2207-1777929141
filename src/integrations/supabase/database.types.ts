@@ -696,6 +696,7 @@ export type Database = {
           human_handover_requested: boolean | null
           id: string
           inbox_status: string | null
+          is_live_takeover: boolean | null
           memory_consent: boolean | null
           metadata: Json | null
           needs_summary: boolean | null
@@ -703,6 +704,7 @@ export type Database = {
           page_url: string | null
           priority: string | null
           referrer: string | null
+          released_at: string | null
           resolved: boolean | null
           resolved_at: string | null
           resolved_by: string | null
@@ -710,6 +712,8 @@ export type Database = {
           started_at: string | null
           status: string | null
           summary_generated_at: string | null
+          taken_over_at: string | null
+          taken_over_by: string | null
           trigger_type: string | null
           visitor_profile_id: string | null
         }
@@ -731,6 +735,7 @@ export type Database = {
           human_handover_requested?: boolean | null
           id?: string
           inbox_status?: string | null
+          is_live_takeover?: boolean | null
           memory_consent?: boolean | null
           metadata?: Json | null
           needs_summary?: boolean | null
@@ -738,6 +743,7 @@ export type Database = {
           page_url?: string | null
           priority?: string | null
           referrer?: string | null
+          released_at?: string | null
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -745,6 +751,8 @@ export type Database = {
           started_at?: string | null
           status?: string | null
           summary_generated_at?: string | null
+          taken_over_at?: string | null
+          taken_over_by?: string | null
           trigger_type?: string | null
           visitor_profile_id?: string | null
         }
@@ -766,6 +774,7 @@ export type Database = {
           human_handover_requested?: boolean | null
           id?: string
           inbox_status?: string | null
+          is_live_takeover?: boolean | null
           memory_consent?: boolean | null
           metadata?: Json | null
           needs_summary?: boolean | null
@@ -773,6 +782,7 @@ export type Database = {
           page_url?: string | null
           priority?: string | null
           referrer?: string | null
+          released_at?: string | null
           resolved?: boolean | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -780,6 +790,8 @@ export type Database = {
           started_at?: string | null
           status?: string | null
           summary_generated_at?: string | null
+          taken_over_at?: string | null
+          taken_over_by?: string | null
           trigger_type?: string | null
           visitor_profile_id?: string | null
         }
@@ -803,6 +815,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "visitor_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_taken_over_by_fkey"
+            columns: ["taken_over_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1350,6 +1369,48 @@ export type Database = {
           },
         ]
       }
+      live_takeover_logs: {
+        Row: {
+          action: string
+          admin_id: string | null
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          message_content: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          message_content?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          message_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_takeover_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_takeover_logs_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_confidence: {
         Row: {
           confidence_score: number | null
@@ -1393,8 +1454,10 @@ export type Database = {
           content: string
           conversation_id: string
           id: string
+          message_type: string | null
           metadata: Json | null
           role: string
+          sent_by_admin: string | null
           source_type: string | null
           source_url: string | null
           timestamp: string | null
@@ -1403,8 +1466,10 @@ export type Database = {
           content: string
           conversation_id: string
           id?: string
+          message_type?: string | null
           metadata?: Json | null
           role: string
+          sent_by_admin?: string | null
           source_type?: string | null
           source_url?: string | null
           timestamp?: string | null
@@ -1413,8 +1478,10 @@ export type Database = {
           content?: string
           conversation_id?: string
           id?: string
+          message_type?: string | null
           metadata?: Json | null
           role?: string
+          sent_by_admin?: string | null
           source_type?: string | null
           source_url?: string | null
           timestamp?: string | null
@@ -1425,6 +1492,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sent_by_admin_fkey"
+            columns: ["sent_by_admin"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

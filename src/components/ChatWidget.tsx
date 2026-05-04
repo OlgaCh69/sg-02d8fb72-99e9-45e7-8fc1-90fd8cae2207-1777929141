@@ -38,6 +38,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isTakenOver, setIsTakenOver] = useState(false);
+  const [adminName, setAdminName] = useState<string>("");
 
   useEffect(() => {
     initializeWidget();
@@ -54,6 +56,50 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       checkProactiveTriggers();
     }
   }, [triggerFired, isOpen, settings]);
+
+  useEffect(() => {
+    if (conversationId) {
+      subscribeToMessages();
+    }
+  }, [conversationId]);
+
+  const subscribeToMessages = () => {
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`messages:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          
+          // Check if it's a takeover/release system message
+          if (newMessage.message_type === "system") {
+            const metadata = newMessage.metadata as any;
+            if (metadata?.system_event === "takeover") {
+              setIsTakenOver(true);
+              setAdminName(metadata?.admin_name || "a human agent");
+            } else if (metadata?.system_event === "release") {
+              setIsTakenOver(false);
+              setAdminName("");
+            }
+          }
+          
+          setMessages((prev) => [...prev, newMessage]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   const detectDarkMode = () => {
     // Check if user has widget theme preference
@@ -548,8 +594,12 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
               <div>
-                <h3 className="font-semibold">Chat with us</h3>
-                <p className="text-xs opacity-90">We typically reply instantly</p>
+                <h3 className="font-semibold">
+                  {isTakenOver ? `Chatting with ${adminName}` : "Chat with us"}
+                </h3>
+                <p className="text-xs opacity-90">
+                  {isTakenOver ? "Human support" : "We typically reply instantly"}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1">

@@ -61,6 +61,22 @@ export default async function handler(
       return res.status(404).json({ error: "Profile not found" });
     }
 
+    // 2.5 Check if conversation is in live takeover mode
+    const { data: conversation } = await supabase
+      .from("conversations")
+      .select("is_live_takeover, taken_over_by")
+      .eq("id", conversationId)
+      .single();
+
+    if (conversation?.is_live_takeover) {
+      // Admin has taken over - don't send AI response
+      return res.status(200).json({
+        response: "",
+        isTakenOver: true,
+        message: "An admin is handling this conversation",
+      });
+    }
+
     // 3. Save user message
     await supabase.from("messages").insert({
       conversation_id: conversationId,
