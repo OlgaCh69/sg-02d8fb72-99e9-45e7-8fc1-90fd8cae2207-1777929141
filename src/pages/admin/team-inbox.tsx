@@ -13,7 +13,7 @@ import { MessageCircle, User, Clock, Tag, AlertCircle, CheckCircle, Archive } fr
 import type { Database } from "@/integrations/supabase/types";
 
 type Conversation = Database["public"]["Tables"]["conversations"]["Row"];
-type TeamAssignment = Database["public"]["Tables"]["team_assignments"]["Row"];
+type TeamAssignment = Database["public"]["Tables"]["conversation_assignments"]["Row"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export default function TeamInboxPage() {
@@ -74,10 +74,11 @@ export default function TeamInboxPage() {
 
     // Load assignment
     const { data: assignmentData } = await supabase
-      .from("team_assignments")
+      .from("conversation_assignments")
       .select("*")
       .eq("conversation_id", conv.id)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     setAssignment(assignmentData);
   };
@@ -85,10 +86,10 @@ export default function TeamInboxPage() {
   const handleAssign = async (userId: string) => {
     if (!selectedConversation) return;
 
-    const { error } = await supabase.from("team_assignments").upsert({
+    await supabase.from("conversation_assignments").delete().eq("conversation_id", selectedConversation.id);
+    const { error } = await supabase.from("conversation_assignments").insert({
       conversation_id: selectedConversation.id,
       assigned_to: userId,
-      assigned_at: new Date().toISOString(),
     });
 
     if (!error) {
@@ -111,9 +112,9 @@ export default function TeamInboxPage() {
   const handleAddNote = async () => {
     if (!selectedConversation || !internalNote) return;
 
-    await supabase.from("team_assignments").upsert({
+    await supabase.from("conversation_notes").insert({
       conversation_id: selectedConversation.id,
-      internal_notes: internalNote,
+      note_text: internalNote,
     });
 
     setInternalNote("");

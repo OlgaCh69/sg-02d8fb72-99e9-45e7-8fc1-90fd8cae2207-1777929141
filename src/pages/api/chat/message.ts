@@ -218,7 +218,7 @@ RESPONSE INSTRUCTIONS:
     const finalResponse = shouldAnswer ? aiResponse : getLowConfidenceFallback();
 
     // 11. Save assistant message
-    await supabase.from("messages").insert({
+    const { data: assistantMsg } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       role: "assistant",
       content: finalResponse,
@@ -228,17 +228,18 @@ RESPONSE INSTRUCTIONS:
         confidence: confidence,
         intent: intent,
       },
-    } as any);
+    } as any).select().single();
 
-    // 12. Save answer feedback for quality control
-    await supabase.from("answer_feedback").insert({
-      conversation_id: conversationId,
-      message_content: message,
-      ai_response: finalResponse,
-      confidence_score: confidence,
-      source_type: sourceType,
-      source_url: sourceUrl,
-    });
+    // 12. Save answer confidence for quality control
+    if (assistantMsg) {
+      await supabase.from("message_confidence").insert({
+        message_id: assistantMsg.id,
+        confidence_score: confidence,
+        source_type: sourceType,
+        source_url: sourceUrl,
+        knowledge_match_count: knowledgeChunks.length,
+      });
+    }
 
     // 13. Update lead score
     let scoreChange = 0;

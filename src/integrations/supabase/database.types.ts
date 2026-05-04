@@ -2172,6 +2172,7 @@ export type Database = {
       }
       widget_settings: {
         Row: {
+          allow_file_uploads: boolean | null
           button_text: string | null
           id: string
           is_enabled: boolean | null
@@ -2182,6 +2183,7 @@ export type Database = {
           welcome_message: string | null
         }
         Insert: {
+          allow_file_uploads?: boolean | null
           button_text?: string | null
           id?: string
           is_enabled?: boolean | null
@@ -2192,6 +2194,7 @@ export type Database = {
           welcome_message?: string | null
         }
         Update: {
+          allow_file_uploads?: boolean | null
           button_text?: string | null
           id?: string
           is_enabled?: boolean | null
