@@ -30,10 +30,15 @@ export default async function handler(
       return res.status(404).json({ error: "Profile not found" });
     }
 
-    // Gather all data
+    // Fetch conversations first so we can use their IDs for messages
+    const { data: conversations } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("visitor_profile_id", profile.id);
+
+    // Gather all remaining data
     const [
       { data: sessions },
-      { data: conversations },
       { data: messages },
       { data: summaries },
       { data: memory },
@@ -41,7 +46,6 @@ export default async function handler(
       { data: leads },
     ] = await Promise.all([
       supabase.from("visitor_sessions").select("*").eq("visitor_profile_id", profile.id),
-      supabase.from("conversations").select("*").eq("visitor_profile_id", profile.id),
       supabase.from("messages").select("*").in("conversation_id", 
         conversations?.map(c => c.id) || []
       ),
