@@ -600,7 +600,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       {isOpen && (
         <Card className={`fixed bottom-6 right-6 w-[380px] h-[600px] shadow-2xl flex flex-col z-50 overflow-hidden ${bgColor} ${borderColor} transition-colors duration-300`}>
           <div
-            className="flex items-center justify-between p-4 text-white"
+            className="flex items-center justify-between p-4 text-white relative"
             style={{ backgroundColor: primaryColor }}
           >
             <div className="flex items-center gap-2">
@@ -615,6 +615,11 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <img 
+                src="/onetech-logo.png" 
+                alt="O.N.E.Tech" 
+                className="h-8 w-8 mr-2"
+              />
               {settings?.support_dark_mode && (
                 <Button
                   variant="ghost"
@@ -743,7 +748,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                 <Send className="h-4 w-4 text-white" />
               </Button>
             </div>
-            <div className="mt-2 text-center">
+            <div className="mt-2 flex items-center justify-between">
               <button
                 onClick={async () => {
                   if (conversationId) {
@@ -776,6 +781,14 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
               >
                 Request human support
               </button>
+              <a 
+                href="https://onetechautomation.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className={`text-xs ${isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"} transition-colors flex items-center gap-1`}
+              >
+                Powered by <span className="font-semibold">O.N.E.Tech</span>
+              </a>
             </div>
           </div>
         </Card>
