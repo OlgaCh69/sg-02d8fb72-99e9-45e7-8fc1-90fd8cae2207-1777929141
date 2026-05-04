@@ -162,6 +162,30 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
 
             <Link
+              href="/admin/playbooks"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/playbooks"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <BookOpen className="h-5 w-5" />
+              Playbooks
+            </Link>
+
+            <Link
+              href="/admin/ab-tests"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/ab-tests"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Layers className="h-5 w-5" />
+              A/B Tests
+            </Link>
+
+            <Link
               href="/admin/settings"
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                 router.pathname === "/admin/settings"
