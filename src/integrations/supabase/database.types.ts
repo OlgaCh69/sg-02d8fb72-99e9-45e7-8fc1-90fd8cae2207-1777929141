@@ -1723,6 +1723,311 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_ab_tests: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: string | null
+          test_name: string
+          traffic_split: number | null
+          version_a_id: string | null
+          version_b_id: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+          test_name: string
+          traffic_split?: number | null
+          version_a_id?: string | null
+          version_b_id?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: string | null
+          test_name?: string
+          traffic_split?: number | null
+          version_a_id?: string | null
+          version_b_id?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_ab_tests_version_a_id_fkey"
+            columns: ["version_a_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_ab_tests_version_b_id_fkey"
+            columns: ["version_b_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_ab_tests_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_performance: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          handoff_requested: boolean | null
+          id: string
+          lead_conversion: boolean | null
+          response_relevance: number | null
+          response_time: number | null
+          tokens_used: number | null
+          user_satisfaction: number | null
+          version_id: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          handoff_requested?: boolean | null
+          id?: string
+          lead_conversion?: boolean | null
+          response_relevance?: number | null
+          response_time?: number | null
+          tokens_used?: number | null
+          user_satisfaction?: number | null
+          version_id?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          handoff_requested?: boolean | null
+          id?: string
+          lead_conversion?: boolean | null
+          response_relevance?: number | null
+          response_time?: number | null
+          tokens_used?: number | null
+          user_satisfaction?: number | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_performance_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_performance_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_templates: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_test_cases: {
+        Row: {
+          context_variables: Json | null
+          created_at: string | null
+          expected_output: string | null
+          id: string
+          template_id: string | null
+          test_input: string
+          test_name: string
+        }
+        Insert: {
+          context_variables?: Json | null
+          created_at?: string | null
+          expected_output?: string | null
+          id?: string
+          template_id?: string | null
+          test_input: string
+          test_name: string
+        }
+        Update: {
+          context_variables?: Json | null
+          created_at?: string | null
+          expected_output?: string | null
+          id?: string
+          template_id?: string | null
+          test_input?: string
+          test_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_test_cases_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_test_results: {
+        Row: {
+          actual_output: string | null
+          error_message: string | null
+          id: string
+          passed: boolean | null
+          response_time: number | null
+          test_case_id: string | null
+          tested_at: string | null
+          tokens_used: number | null
+          version_id: string | null
+        }
+        Insert: {
+          actual_output?: string | null
+          error_message?: string | null
+          id?: string
+          passed?: boolean | null
+          response_time?: number | null
+          test_case_id?: string | null
+          tested_at?: string | null
+          tokens_used?: number | null
+          version_id?: string | null
+        }
+        Update: {
+          actual_output?: string | null
+          error_message?: string | null
+          id?: string
+          passed?: boolean | null
+          response_time?: number | null
+          test_case_id?: string | null
+          tested_at?: string | null
+          tokens_used?: number | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_test_results_test_case_id_fkey"
+            columns: ["test_case_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_test_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_test_results_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_versions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_published: boolean | null
+          max_tokens: number | null
+          prompt_content: string
+          system_instructions: string | null
+          temperature: number | null
+          template_id: string | null
+          variables: Json | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          max_tokens?: number | null
+          prompt_content: string
+          system_instructions?: string | null
+          temperature?: number | null
+          template_id?: string | null
+          variables?: Json | null
+          version_number: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          max_tokens?: number | null
+          prompt_content?: string
+          system_instructions?: string | null
+          temperature?: number | null
+          template_id?: string | null
+          variables?: Json | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limits: {
         Row: {
           endpoint: string

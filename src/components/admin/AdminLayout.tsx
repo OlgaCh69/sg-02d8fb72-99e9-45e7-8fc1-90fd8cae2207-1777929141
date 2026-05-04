@@ -21,6 +21,7 @@ import {
   Moon,
   Sun,
   Monitor,
+  Sparkles,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -48,6 +49,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/triggers", icon: Zap, label: "Triggers" },
     { href: "/admin/channels", icon: MessageCircle, label: "Channels" },
     { href: "/admin/playbooks", icon: BookOpen, label: "Playbooks" },
+    { href: "/admin/prompt-tuning", icon: Sparkles, label: "Prompt Tuning" },
     { href: "/admin/ab-tests", icon: Layers, label: "A/B Tests" },
     { href: "/admin/reports", icon: BarChart3, label: "Reports" },
     { href: "/admin/testing", icon: TestTube, label: "Testing" },
