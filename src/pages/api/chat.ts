@@ -29,8 +29,8 @@ export default async function handler(
 
       const memory = await getUserMemory(profile.id);
       memoryContext = buildMemoryContext(memory);
-      if (profile.full_name) {
-        userName = profile.full_name;
+      if (profile.name) {
+        userName = profile.name;
       }
     }
 
