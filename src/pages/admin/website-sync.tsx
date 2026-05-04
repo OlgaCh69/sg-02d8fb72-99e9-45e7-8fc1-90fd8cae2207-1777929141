@@ -151,31 +151,58 @@ export default function WebsiteSyncPage() {
   };
 
   const handleStartCrawl = async () => {
-    if (!formData.website_url) {
-      alert("Please enter a website URL first");
+    if (!formData.website_url.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a website URL",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(formData.website_url);
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid URL (e.g., https://example.com)",
+        variant: "destructive",
+      });
       return;
     }
 
     setCrawling(true);
-
     try {
       const response = await fetch("/api/crawl/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ websiteUrl: formData.website_url }),
+        body: JSON.stringify({ 
+          startUrl: formData.website_url,
+          maxPages: formData.max_pages 
+        }),
       });
 
       const data = await response.json();
 
-      if (response.ok) {
-        alert(`Crawl completed! ${data.pages_new} new pages, ${data.pages_updated} updated.`);
-        loadData();
-      } else {
-        alert(`Crawl failed: ${data.error}`);
+      if (!response.ok) {
+        throw new Error(data.error || "Crawl failed");
       }
-    } catch (error) {
-      alert("Crawl failed. Please try again.");
-    } finally {
+
+      toast({
+        title: "Success",
+        description: `Crawled ${data.pagesProcessed} pages and added ${data.knowledgeAdded} knowledge entries`,
+      });
+
+      setCrawling(false);
+      loadData();
+    } catch (error: any) {
+      console.error("Crawl error:", error);
+      toast({
+        title: "Crawl Failed",
+        description: error.message || "Failed to crawl website",
+        variant: "destructive",
+      });
       setCrawling(false);
     }
   };
