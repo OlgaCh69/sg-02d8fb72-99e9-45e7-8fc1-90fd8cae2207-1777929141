@@ -1,5 +1,6 @@
 import { ChatWidget } from "@/components/ChatWidget";
 import { SEO } from "@/components/SEO";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -61,12 +62,12 @@ export default function Home() {
             <div className="bg-indigo-600 text-white p-8 rounded-xl shadow-xl">
               <h2 className="text-2xl font-bold mb-4">Ready to Capture More Leads?</h2>
               <p className="mb-6">Click the chat widget in the bottom right to see it in action!</p>
-              <a 
+              <Link 
                 href="/admin/login"
                 className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-slate-100 transition-colors"
               >
                 Admin Dashboard →
-              </a>
+              </Link>
             </div>
           </div>
         </div>
