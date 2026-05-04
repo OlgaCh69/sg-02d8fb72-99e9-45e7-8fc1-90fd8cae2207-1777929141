@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "@/integrations/supabase/client";
+import crypto from "crypto";
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,116 +11,124 @@ export default async function handler(
   }
 
   try {
-    const { query, limit = 5 } = req.body;
+    const { query } = req.body;
 
     if (!query) {
-      return res.status(400).json({ error: "Query is required" });
+      return res.status(400).json({ error: "Missing query" });
     }
 
-    const lowerQuery = query.toLowerCase();
-    const queryWords = lowerQuery.split(" ").filter((word: string) => word.length > 3);
+    // Generate query hash for caching
+    const queryHash = crypto.createHash("md5").update(query.toLowerCase().trim()).digest("hex");
 
-    const results: any[] = [];
+    // Check cache first
+    const { data: cachedResult } = await supabase
+      .from("knowledge_cache")
+      .select("cached_results, hit_count")
+      .eq("query_hash", queryHash)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
 
-    // 1. Search manual FAQ
-    const { data: knowledgeBase } = await supabase
+    if (cachedResult) {
+      // Update hit count
+      await supabase
+        .from("knowledge_cache")
+        .update({ hit_count: (cachedResult.hit_count || 0) + 1 })
+        .eq("query_hash", queryHash);
+
+      return res.status(200).json({
+        results: cachedResult.cached_results,
+        cached: true,
+      });
+    }
+
+    const queryWords = query.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+
+    // 1. Search Knowledge Base (FAQ)
+    const { data: kbResults } = await supabase
       .from("knowledge_base")
-      .select("*")
+      .select("question, answer")
       .eq("is_active", true);
 
-    if (knowledgeBase) {
-      for (const entry of knowledgeBase) {
-        const entryWords = entry.question.toLowerCase().split(" ");
-        const matchCount = entryWords.filter((word: string) => 
-          lowerQuery.includes(word) && word.length > 3
-        ).length;
+    const kbMatches = kbResults?.filter((kb) => {
+      const text = `${kb.question} ${kb.answer}`.toLowerCase();
+      return queryWords.some(word => text.includes(word));
+    }).map(kb => ({
+      source_type: "faq",
+      title: kb.question,
+      content: kb.answer,
+      url: null,
+    })) || [];
 
-        if (matchCount >= 1) {
-          results.push({
-            type: "knowledge_base",
-            title: entry.question,
-            content: entry.answer,
-            url: `FAQ: ${entry.question}`,
-            score: matchCount * 10,
-          });
-        }
-      }
-    }
-
-    // 2. Search website pages
-    const { data: websitePages } = await supabase
+    // 2. Search Website Pages
+    const { data: websiteResults } = await supabase
       .from("knowledge_sources")
-      .select("*")
+      .select("title, content, url")
       .eq("source_type", "website")
       .eq("approved", true);
 
-    if (websitePages && queryWords.length > 0) {
-      for (const page of websitePages) {
-        const contentLower = page.content.toLowerCase();
-        let score = 0;
-        
-        for (const word of queryWords) {
-          if (contentLower.includes(word)) score++;
-        }
+    const websiteMatches = websiteResults?.filter((page) => {
+      const text = `${page.title} ${page.content}`.toLowerCase();
+      return queryWords.some(word => text.includes(word));
+    }).map(page => ({
+      source_type: "website",
+      title: page.title,
+      content: page.content?.substring(0, 300) || "",
+      url: page.url,
+    })) || [];
 
-        if (score > 0) {
-          // Extract relevant snippet
-          const firstWordMatch = queryWords.find(w => contentLower.includes(w)) || queryWords[0];
-          const idx = contentLower.indexOf(firstWordMatch);
-          const start = Math.max(0, idx - 100);
-          const end = Math.min(page.content.length, idx + 300);
-          const snippet = page.content.substring(start, end).trim();
-
-          results.push({
-            type: "website_page",
-            title: page.title,
-            content: snippet,
-            url: page.url,
-            score: score * 5,
-          });
-        }
-      }
-    }
-
-    // 3. Search documents
-    const { data: documents } = await supabase
+    // 3. Search Documents
+    const { data: docResults } = await supabase
       .from("documents")
-      .select("*")
+      .select("title, content")
       .eq("status", "approved");
 
-    if (documents && queryWords.length > 0) {
-      for (const doc of documents) {
-        const contentLower = doc.content.toLowerCase();
-        let score = 0;
-        
-        for (const word of queryWords) {
-          if (contentLower.includes(word)) score++;
-        }
+    const docMatches = docResults?.filter((doc) => {
+      const text = `${doc.title} ${doc.content}`.toLowerCase();
+      return queryWords.some(word => text.includes(word));
+    }).map(doc => ({
+      source_type: "document",
+      title: doc.title,
+      content: doc.content?.substring(0, 300) || "",
+      url: null,
+    })) || [];
 
-        if (score > 0) {
-          const firstWordMatch = queryWords.find(w => contentLower.includes(w)) || queryWords[0];
-          const idx = contentLower.indexOf(firstWordMatch);
-          const start = Math.max(0, idx - 100);
-          const end = Math.min(doc.content.length, idx + 300);
-          const snippet = doc.content.substring(start, end).trim();
+    // 4. Search Products
+    const { data: productResults } = await supabase
+      .from("products")
+      .select("name, description, features")
+      .eq("is_active", true);
 
-          results.push({
-            type: "document",
-            title: doc.title,
-            content: snippet,
-            url: `Document: ${doc.title}`,
-            score: score * 5,
-          });
-        }
-      }
+    const productMatches = productResults?.filter((prod) => {
+      const text = `${prod.name} ${prod.description} ${prod.features}`.toLowerCase();
+      return queryWords.some(word => text.includes(word));
+    }).map(prod => ({
+      source_type: "product",
+      title: prod.name,
+      content: prod.description || "",
+      url: null,
+    })) || [];
+
+    // Combine and prioritize: FAQ > Website > Documents > Products
+    const allResults = [
+      ...kbMatches,
+      ...websiteMatches,
+      ...docMatches,
+      ...productMatches,
+    ].slice(0, 5);
+
+    // Cache the results
+    if (allResults.length > 0) {
+      await supabase.from("knowledge_cache").insert({
+        query_text: query,
+        query_hash: queryHash,
+        cached_results: allResults,
+      });
     }
 
-    // Sort by score and limit
-    const sortedResults = results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
-
-    return res.status(200).json({ results: sortedResults });
+    return res.status(200).json({
+      results: allResults,
+      cached: false,
+    });
   } catch (error) {
     console.error("Knowledge search error:", error);
     return res.status(500).json({ error: "Internal server error" });

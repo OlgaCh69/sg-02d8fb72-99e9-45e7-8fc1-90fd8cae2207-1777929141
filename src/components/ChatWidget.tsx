@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, X, Send, Loader2, Info } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Info, Paperclip } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Message = Database["public"]["Tables"]["messages"]["Row"];
@@ -35,6 +35,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   const [consentMemory, setConsentMemory] = useState<boolean | null>(null);
   const [consentAnalytics, setConsentAnalytics] = useState<boolean | null>(null);
   const [showConsent, setShowConsent] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   useEffect(() => {
     initializeWidget();
@@ -254,6 +256,46 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         });
       } catch (error) {
         console.error("Failed to trigger summarization", error);
+      }
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !conversationId) return;
+
+    setUploadingFile(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("conversationId", conversationId);
+    formData.append("visitorId", visitorId);
+
+    try {
+      const response = await fetch("/api/files/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.fileUrl) {
+        const fileMessage: Message = {
+          id: `temp_file_${Date.now()}`,
+          conversation_id: conversationId,
+          role: "user",
+          content: `📎 Uploaded: ${file.name}`,
+          timestamp: new Date().toISOString(),
+          source_type: null,
+          source_url: data.fileUrl,
+          metadata: { file_url: data.fileUrl, file_name: file.name },
+        };
+        setMessages((prev) => [...prev, fileMessage]);
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -551,6 +593,23 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
 
           <div className="p-4 border-t bg-white">
             <div className="flex gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+                accept="image/*,.pdf,.doc,.docx"
+              />
+              {settings?.allow_file_uploads && (
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadingFile}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+              )}
               <Input
                 placeholder="Type your message..."
                 value={inputValue}

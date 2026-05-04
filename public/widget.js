@@ -1,58 +1,53 @@
 (function() {
-  var config = {
-    apiUrl: window.location.origin
-  };
+  'use strict';
+
+  // Lazy load widget - only initialize when user scrolls or after 3 seconds
+  let widgetLoaded = false;
 
   function loadWidget() {
-    var container = document.createElement('div');
+    if (widgetLoaded) return;
+    widgetLoaded = true;
+
+    // Create widget container
+    const container = document.createElement('div');
     container.id = 'ai-chat-widget-root';
     document.body.appendChild(container);
 
-    var script = document.createElement('script');
-    script.src = config.apiUrl + '/_next/static/chunks/widget-bundle.js';
+    // Load React widget script
+    const script = document.createElement('script');
+    script.src = window.AI_WIDGET_URL || 'https://your-domain.vercel.app/_next/static/chunks/widget-bundle.js';
     script.async = true;
     script.onload = function() {
-      if (window.AIChatWidget) {
-        window.AIChatWidget.init(config);
+      if (window.initAIChatWidget) {
+        window.initAIChatWidget({
+          containerId: 'ai-chat-widget-root',
+          apiUrl: window.AI_WIDGET_API_URL || 'https://your-domain.vercel.app',
+        });
       }
     };
-    document.head.appendChild(script);
-
-    trackPageView();
+    document.body.appendChild(script);
   }
 
-  function trackPageView() {
-    var visitorId = localStorage.getItem('ai_visitor_id');
-    if (!visitorId) {
-      visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('ai_visitor_id', visitorId);
+  // Trigger lazy load on scroll
+  let scrolled = false;
+  window.addEventListener('scroll', function() {
+    if (!scrolled && (window.scrollY > 100 || document.documentElement.scrollTop > 100)) {
+      scrolled = true;
+      loadWidget();
     }
+  }, { passive: true });
 
-    var sessionId = sessionStorage.getItem('ai_session_id');
-    if (!sessionId) {
-      sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      sessionStorage.setItem('ai_session_id', sessionId);
+  // Fallback: load after 3 seconds if no scroll
+  setTimeout(function() {
+    if (!widgetLoaded) {
+      loadWidget();
     }
+  }, 3000);
 
-    fetch(config.apiUrl + '/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_type: 'page_view',
-        visitor_id: visitorId,
-        session_id: sessionId,
-        page_url: window.location.href,
-        referrer: document.referrer,
-        user_agent: navigator.userAgent
-      })
-    }).catch(function(err) {
-      console.error('Tracking error:', err);
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadWidget);
-  } else {
-    loadWidget();
-  }
+  // Load immediately on user interaction
+  ['click', 'mousemove', 'touchstart'].forEach(function(event) {
+    document.addEventListener(event, function() {
+      loadWidget();
+    }, { once: true, passive: true });
+  });
 })();

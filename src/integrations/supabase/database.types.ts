@@ -2212,6 +2212,30 @@ export type Database = {
         }
         Relationships: []
       }
+      widget_performance: {
+        Row: {
+          cache_ttl_hours: number | null
+          created_at: string | null
+          id: string
+          lazy_load_enabled: boolean | null
+          max_cache_size_mb: number | null
+        }
+        Insert: {
+          cache_ttl_hours?: number | null
+          created_at?: string | null
+          id?: string
+          lazy_load_enabled?: boolean | null
+          max_cache_size_mb?: number | null
+        }
+        Update: {
+          cache_ttl_hours?: number | null
+          created_at?: string | null
+          id?: string
+          lazy_load_enabled?: boolean | null
+          max_cache_size_mb?: number | null
+        }
+        Relationships: []
+      }
       widget_settings: {
         Row: {
           allow_file_uploads: boolean | null
