@@ -24,29 +24,29 @@ export default async function handler(
       .single();
 
     // Check business hours
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
     const { data: businessHours } = await supabase
       .from("business_hours")
       .select("*")
-      .eq("is_enabled", true)
-      .single();
+      .eq("day_of_week", currentDay)
+      .maybeSingle();
 
     let isWorkingHours = true;
     if (businessHours) {
-      const now = new Date();
-      const currentDay = now.toLocaleLowerCase().split(' ')[0]; // "mon", "tue", etc.
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      const currentTime = currentHour * 60 + currentMinute;
+      if (!businessHours.is_working_day) {
+        isWorkingHours = false;
+      } else if (businessHours.open_time && businessHours.close_time) {
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTime = currentHour * 60 + currentMinute;
 
-      const dayConfig = (businessHours.hours_config as any)?.[currentDay];
-      if (dayConfig && dayConfig.enabled) {
-        const [startHour, startMin] = dayConfig.start.split(':').map(Number);
-        const [endHour, endMin] = dayConfig.end.split(':').map(Number);
+        const [startHour, startMin] = businessHours.open_time.split(':').map(Number);
+        const [endHour, endMin] = businessHours.close_time.split(':').map(Number);
         const startTime = startHour * 60 + startMin;
         const endTime = endHour * 60 + endMin;
         isWorkingHours = currentTime >= startTime && currentTime <= endTime;
-      } else {
-        isWorkingHours = false;
       }
     }
 
