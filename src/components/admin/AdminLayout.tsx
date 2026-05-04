@@ -64,6 +64,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
 
             <Link
+              href="/admin/visitor-profiles"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/visitor-profiles"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Users className="h-5 w-5" />
+              Visitor Profiles
+            </Link>
+
+            <Link
               href="/admin/leads"
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                 router.pathname === "/admin/leads"

@@ -201,7 +201,10 @@ Keep response under 120 words unless user asks for detail.`;
     if (profile.email || profile.phone) scoreChange += 25;
 
     if (scoreChange > 0) {
-      const newScore = (profile.lead_score || 0) + scoreChange;
+      const oldScore = profile.lead_score || 0;
+      const newScore = oldScore + scoreChange;
+      
+      const oldStatus = profile.lead_status || "UNKNOWN";
       let newStatus: "HOT" | "WARM" | "COLD" | "UNKNOWN" = "UNKNOWN";
       if (newScore >= 70) newStatus = "HOT";
       else if (newScore >= 35) newStatus = "WARM";
@@ -211,6 +214,18 @@ Keep response under 120 words unless user asks for detail.`;
         .from("visitor_profiles")
         .update({ lead_score: newScore, lead_status: newStatus })
         .eq("id", profile.id);
+
+      // Track score history
+      if (oldStatus !== newStatus || scoreChange > 0) {
+        await supabase.from("lead_score_history").insert({
+          visitor_profile_id: profile.id,
+          old_score: oldScore,
+          new_score: newScore,
+          old_status: oldStatus,
+          new_status: newStatus,
+          reason: `Message interaction: ${lowerMessage.includes("price") ? "asked about pricing" : lowerMessage.includes("quote") || lowerMessage.includes("demo") ? "requested quote/demo" : lowerMessage.includes("buy") ? "purchase intent" : "provided contact info"}`,
+        });
+      }
     }
 
     return res.status(200).json({
