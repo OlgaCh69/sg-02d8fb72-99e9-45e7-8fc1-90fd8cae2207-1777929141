@@ -689,6 +689,7 @@ export type Database = {
           content: string
           conversation_id: string
           id: string
+          metadata: Json | null
           role: string
           source_type: string | null
           source_url: string | null
@@ -698,6 +699,7 @@ export type Database = {
           content: string
           conversation_id: string
           id?: string
+          metadata?: Json | null
           role: string
           source_type?: string | null
           source_url?: string | null
@@ -707,6 +709,7 @@ export type Database = {
           content?: string
           conversation_id?: string
           id?: string
+          metadata?: Json | null
           role?: string
           source_type?: string | null
           source_url?: string | null

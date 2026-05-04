@@ -39,7 +39,7 @@ export default async function handler(
       role: "user",
       content: message,
       metadata: { page_url: pageUrl, page_title: pageTitle },
-    });
+    } as any);
 
     // Track message_sent event
     await supabase.from("analytics_events").insert({
@@ -184,8 +184,10 @@ Keep response under 120 words unless user asks for detail.`;
       conversation_id: conversationId,
       role: "assistant",
       content: aiResponse,
+      source_type: sourceType,
+      source_url: sourceUrl,
       metadata: { source_type: sourceType, source_url: sourceUrl },
-    });
+    } as any);
 
     // 11. Determine if we should capture lead
     const leadTriggers = ["pricing", "cost", "quote", "demo", "contact", "sales", "buy", "book", "schedule"];
