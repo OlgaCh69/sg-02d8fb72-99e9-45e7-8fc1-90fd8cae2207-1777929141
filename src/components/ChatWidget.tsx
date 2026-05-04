@@ -217,9 +217,12 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       const data = await response.json();
       setConversationId(data.conversationId);
 
-      // Get personalized greeting
+      // Get personalized greeting based on business hours
       let greeting = settings?.welcome_message || "Hi! How can I help you today?";
-      if (data.returningUser && data.userName) {
+      
+      if (!data.isWorkingHours) {
+        greeting = "Thanks for reaching out! We're currently outside business hours. Leave your details and we'll get back to you soon.";
+      } else if (data.returningUser && data.userName) {
         greeting = `Welcome back, ${data.userName.split(' ')[0]}! ${greeting}`;
       } else if (data.returningUser) {
         greeting = `Welcome back! ${greeting}`;

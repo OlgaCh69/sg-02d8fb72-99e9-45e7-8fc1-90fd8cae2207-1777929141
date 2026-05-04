@@ -14,6 +14,8 @@ import {
   Layers,
   Share2,
   Zap,
+  Database,
+  MessageCircle,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -100,18 +102,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
 
             <Link
-              href="/admin/knowledge-sources"
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                router.pathname === "/admin/knowledge-sources"
-                  ? "bg-indigo-600 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              <Layers className="h-5 w-5" />
-              Knowledge Sources
-            </Link>
-
-            <Link
               href="/admin/knowledge-base"
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                 router.pathname === "/admin/knowledge-base"
@@ -121,6 +111,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             >
               <BookOpen className="h-5 w-5" />
               Knowledge Base
+            </Link>
+
+            <Link
+              href="/admin/knowledge-sources"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/knowledge-sources"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Database className="h-5 w-5" />
+              Knowledge Sources
             </Link>
 
             <Link
@@ -136,18 +138,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
 
             <Link
-              href="/admin/channels"
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                router.pathname === "/admin/channels"
-                  ? "bg-indigo-600 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              <Share2 className="h-5 w-5" />
-              Social Channels
-            </Link>
-
-            <Link
               href="/admin/triggers"
               className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
                 router.pathname === "/admin/triggers"
@@ -156,7 +146,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               }`}
             >
               <Zap className="h-5 w-5" />
-              Triggers & Rules
+              Triggers
+            </Link>
+
+            <Link
+              href="/admin/channels"
+              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                router.pathname === "/admin/channels"
+                  ? "bg-indigo-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <MessageCircle className="h-5 w-5" />
+              Channels
             </Link>
 
             <Link

@@ -10,72 +10,112 @@ export default async function handler(
   }
 
   try {
-    const {
-      visitorProfileId,
-      sessionDbId,
-      channel = "website",
-    } = req.body;
+    const { visitorId, sessionId, consentMemory, channel, triggerType } = req.body;
 
-    if (!visitorProfileId) {
-      return res.status(400).json({ error: "visitorProfileId required" });
+    if (!visitorId) {
+      return res.status(400).json({ error: "Missing visitorId" });
     }
 
-    // Create conversation
-    const { data: conversation, error } = await supabase
-      .from("conversations")
-      .insert({
-        visitor_profile_id: visitorProfileId,
-        session_id: sessionDbId || null,
-        channel,
-        status: "active",
-      })
-      .select()
-      .single();
-
-    if (error || !conversation) {
-      console.error("Conversation creation error:", error);
-      return res.status(500).json({ error: "Failed to create conversation" });
-    }
-
-    // Load existing memory if consent
+    // Get visitor profile
     const { data: profile } = await supabase
       .from("visitor_profiles")
       .select("*")
-      .eq("id", visitorProfileId)
+      .eq("visitor_id", visitorId)
       .single();
 
-    let memory = null;
-    if (profile?.consent_memory) {
-      const { data: memoryData } = await supabase
-        .from("visitor_memory")
-        .select("*")
-        .eq("visitor_profile_id", visitorProfileId)
-        .eq("is_active", true);
+    // Check business hours
+    const { data: businessHours } = await supabase
+      .from("business_hours")
+      .select("*")
+      .eq("is_enabled", true)
+      .single();
 
-      memory = memoryData || [];
+    let isWorkingHours = true;
+    if (businessHours) {
+      const now = new Date();
+      const currentDay = now.toLocaleLowerCase().split(' ')[0]; // "mon", "tue", etc.
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTime = currentHour * 60 + currentMinute;
+
+      const dayConfig = (businessHours.hours_config as any)?.[currentDay];
+      if (dayConfig && dayConfig.enabled) {
+        const [startHour, startMin] = dayConfig.start.split(':').map(Number);
+        const [endHour, endMin] = dayConfig.end.split(':').map(Number);
+        const startTime = startHour * 60 + startMin;
+        const endTime = endHour * 60 + endMin;
+        isWorkingHours = currentTime >= startTime && currentTime <= endTime;
+      } else {
+        isWorkingHours = false;
+      }
     }
 
-    // Track chat_opened event
-    if (profile?.consent_analytics) {
-      await supabase.from("analytics_events").insert({
-        visitor_profile_id: visitorProfileId,
-        session_id: sessionDbId,
-        conversation_id: conversation.id,
-        event_name: "chat_opened",
-        metadata: { channel },
-      });
+    // Create or get active conversation
+    const { data: existingConv } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("visitor_profile_id", profile?.id)
+      .eq("status", "open")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-      // Update lead score
-      await supabase
-        .from("visitor_profiles")
-        .update({ lead_score: (profile.lead_score || 0) + 10 })
-        .eq("id", visitorProfileId);
+    if (existingConv) {
+      // Load memory if consent
+      let userName = null;
+      if (consentMemory && profile) {
+        const { data: summaries } = await supabase
+          .from("conversation_summaries")
+          .select("*")
+          .eq("visitor_profile_id", profile.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (summaries && summaries.length > 0) {
+          userName = profile.name;
+        }
+      }
+
+      return res.status(200).json({
+        conversationId: existingConv.id,
+        returningUser: !!userName,
+        userName,
+        isWorkingHours,
+      });
+    }
+
+    // Create new conversation
+    const { data: newConv } = await supabase
+      .from("conversations")
+      .insert({
+        visitor_profile_id: profile?.id,
+        session_id: sessionId,
+        channel: channel || "website",
+        status: "open",
+      } as any)
+      .select()
+      .single();
+
+    // Load memory
+    let userName = null;
+    if (consentMemory && profile) {
+      const { data: summaries } = await supabase
+        .from("conversation_summaries")
+        .select("*")
+        .eq("visitor_profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (summaries && summaries.length > 0) {
+        userName = profile.name;
+      }
     }
 
     return res.status(200).json({
-      conversationId: conversation.id,
-      memory,
-      profile,
+      conversationId: newConv?.id,
+      returningUser: !!userName,
+      userName,
+      isWorkingHours,
     });
   } catch (error) {
     console.error("Chat start error:", error);
