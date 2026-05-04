@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Info } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Message = Database["public"]["Tables"]["messages"]["Row"];
@@ -32,6 +32,9 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [triggerFired, setTriggerFired] = useState(false);
+  const [consentMemory, setConsentMemory] = useState<boolean | null>(null);
+  const [consentAnalytics, setConsentAnalytics] = useState<boolean | null>(null);
+  const [showConsent, setShowConsent] = useState(false);
 
   useEffect(() => {
     initializeWidget();
@@ -43,20 +46,64 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   }, [messages]);
 
   useEffect(() => {
-    // Check for proactive triggers
     if (!triggerFired && !isOpen && settings?.is_enabled) {
       checkProactiveTriggers();
     }
   }, [triggerFired, isOpen, settings]);
 
   const initializeWidget = () => {
+    // Load or create visitor ID
     let visitor = localStorage.getItem("ai_visitor_id");
     if (!visitor) {
       visitor = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem("ai_visitor_id", visitor);
     }
     setVisitorId(visitor);
-    setSessionId(`session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+
+    // Create session ID
+    const session = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setSessionId(session);
+
+    // Load consent preferences
+    const savedMemoryConsent = localStorage.getItem("ai_consent_memory");
+    const savedAnalyticsConsent = localStorage.getItem("ai_consent_analytics");
+    
+    if (savedMemoryConsent !== null) {
+      setConsentMemory(savedMemoryConsent === "true");
+    }
+    if (savedAnalyticsConsent !== null) {
+      setConsentAnalytics(savedAnalyticsConsent === "true");
+    }
+
+    // Show consent UI if not set
+    if (savedMemoryConsent === null || savedAnalyticsConsent === null) {
+      setShowConsent(true);
+    }
+  };
+
+  const handleConsentChoice = async (memory: boolean, analytics: boolean) => {
+    setConsentMemory(memory);
+    setConsentAnalytics(analytics);
+    localStorage.setItem("ai_consent_memory", String(memory));
+    localStorage.setItem("ai_consent_analytics", String(analytics));
+    setShowConsent(false);
+
+    // Create session
+    await fetch("/api/widget/session/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        visitorId,
+        sessionId,
+        pageUrl: window.location.href,
+        pageTitle: document.title,
+        referrer: document.referrer || null,
+        device: /mobile/i.test(navigator.userAgent) ? "mobile" : "desktop",
+        browser: navigator.userAgent.split(" ").pop() || "unknown",
+        consentMemory: memory,
+        consentAnalytics: analytics,
+      }),
+    });
   };
 
   const loadSettings = async () => {
@@ -83,7 +130,6 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       const currentPath = window.location.pathname;
 
       for (const trigger of triggers) {
-        // Check if page matches
         if (trigger.page_match_pattern && !currentPath.includes(trigger.page_match_pattern)) {
           continue;
         }
@@ -130,11 +176,20 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   };
 
   const trackEvent = async (eventType: string, metadata?: any) => {
+    if (!consentAnalytics) return;
+    
     try {
-      await supabase.from("analytics_events").insert({
-        event_name: eventType,
-        page_url: window.location.href,
-        metadata: { ...metadata, visitor_id: visitorId, session_id: sessionId },
+      await fetch("/api/analytics/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId,
+          sessionId,
+          conversationId,
+          eventName: eventType,
+          pageUrl: window.location.href,
+          metadata: metadata || {},
+        }),
       });
     } catch (error) {
       console.error("Error tracking event:", error);
@@ -146,83 +201,48 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     await trackEvent("chat_opened");
 
     if (!conversationId) {
-      // Get page context
-      const pageTitle = document.title;
-      const referrer = document.referrer;
+      // Start conversation with memory context
+      const response = await fetch("/api/chat/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitorId,
+          sessionId,
+          consentMemory,
+          channel: "website",
+          triggerType,
+        }),
+      });
 
-      const { data } = await supabase
-        .from("conversations")
-        .insert({
-          page_url: window.location.href,
-          page_title: pageTitle,
-          referrer: referrer || null,
-          trigger_type: triggerType,
-          status: "active",
-          device: /mobile/i.test(navigator.userAgent) ? "mobile" : "desktop",
-          browser: navigator.userAgent.split(" ").pop() || "unknown",
-        } as any)
-        .select()
-        .single();
+      const data = await response.json();
+      setConversationId(data.conversationId);
 
-      if (data) {
-        setConversationId(data.id);
-        
-        // Check for page-specific rules
-        let greeting = settings?.welcome_message || "Hi! How can I help you today?";
-        try {
-          const currentPath = window.location.pathname;
-          const { data: pageRules } = await supabase
-            .from("page_rules")
-            .select("*")
-            .eq("enabled", true);
-
-          if (pageRules && pageRules.length > 0) {
-            for (const rule of pageRules) {
-              if (currentPath.includes(rule.page_pattern)) {
-                if (rule.custom_welcome_message) {
-                  greeting = rule.custom_welcome_message;
-                }
-                break;
-              }
-            }
-          }
-
-          // Check if we know this user
-          const { data: profiles } = await supabase
-            .from("visitor_profiles")
-            .select("name")
-            .eq("visitor_id", visitorId)
-            .limit(1);
-          
-          if (profiles && profiles.length > 0 && profiles[0].name) {
-            greeting = `Welcome back, ${profiles[0].name.split(' ')[0]}! ${greeting}`;
-          } else if (profiles && profiles.length > 0) {
-            greeting = `Welcome back! ${greeting}`;
-          }
-        } catch (e) {
-          console.error("Failed to check page rules or returning user", e);
-        }
-
-        const msg: Message = {
-          id: `temp_${Date.now()}`,
-          conversation_id: data.id,
-          role: "assistant",
-          content: greeting,
-          timestamp: new Date().toISOString(),
-          source_type: null,
-          source_url: null,
-          metadata: {},
-        };
-        setMessages([msg]);
+      // Get personalized greeting
+      let greeting = settings?.welcome_message || "Hi! How can I help you today?";
+      if (data.returningUser && data.userName) {
+        greeting = `Welcome back, ${data.userName.split(' ')[0]}! ${greeting}`;
+      } else if (data.returningUser) {
+        greeting = `Welcome back! ${greeting}`;
       }
+
+      const msg: Message = {
+        id: `temp_${Date.now()}`,
+        conversation_id: data.conversationId,
+        role: "assistant",
+        content: greeting,
+        timestamp: new Date().toISOString(),
+        source_type: null,
+        source_url: null,
+        metadata: {},
+      };
+      setMessages([msg]);
     }
   };
 
   const handleClose = async () => {
     setIsOpen(false);
     
-    // Trigger conversation summarization for long-term memory
-    if (conversationId) {
+    if (conversationId && consentMemory) {
       try {
         await fetch("/api/chat/summarize", {
           method: "POST",
@@ -254,19 +274,16 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     setLoading(true);
 
     try {
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        role: "user",
-        content: inputValue,
-      });
-
-      const response = await fetch("/api/chat", {
+      const response = await fetch("/api/chat/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: inputValue,
           conversationId,
           visitorId,
+          sessionId,
+          pageUrl: window.location.href,
+          pageTitle: document.title,
         }),
       });
 
@@ -285,15 +302,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        role: "assistant",
-        content: data.response,
-        source_url: data.sourceUrl || null,
-        source_type: data.sourceType || null,
-      });
-
-      if (data.shouldCaptureLead) {
+      if (data.shouldCaptureLead && !leadCaptured) {
         setShowLeadForm(true);
       }
 
@@ -334,19 +343,23 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         .select()
         .single();
 
-      // Update AI User Profile Memory with the captured details
-      try {
-        await supabase
-          .from("visitor_profiles")
-          .update({
-            email: leadForm.email,
-            name: leadForm.name,
-            phone: leadForm.phone,
-            lead_status: "WARM"
-          })
-          .eq("visitor_id", visitorId);
-      } catch (memError) {
-        console.error("Failed to update memory profile", memError);
+      // Merge profile if consent given
+      if (consentMemory) {
+        try {
+          await fetch("/api/memory/merge-profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              visitorId,
+              email: leadForm.email,
+              phone: leadForm.phone,
+              name: leadForm.name,
+              company: leadForm.company,
+            }),
+          });
+        } catch (mergeError) {
+          console.error("Failed to merge profile", mergeError);
+        }
       }
 
       if (data) {
@@ -374,6 +387,62 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   const primaryColor = settings?.primary_color || "#4F46E5";
 
   if (!settings?.is_enabled) return null;
+
+  // Show consent banner if not decided
+  if (showConsent && isOpen) {
+    return (
+      <Card className="fixed bottom-6 right-6 w-[380px] shadow-2xl z-50 overflow-hidden">
+        <div
+          className="flex items-center justify-between p-4 text-white"
+          style={{ backgroundColor: primaryColor }}
+        >
+          <div className="flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            <h3 className="font-semibold">Privacy & Consent</h3>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsOpen(false)}
+            className="text-white hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="p-4 space-y-4">
+          <p className="text-sm text-slate-600">
+            This AI assistant can remember your conversation to improve support and provide personalized help.
+          </p>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-slate-700">Your choices:</p>
+            <ul className="text-xs text-slate-600 space-y-1 ml-4 list-disc">
+              <li>Remember my conversation for better support</li>
+              <li>Track chat usage for analytics</li>
+            </ul>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => handleConsentChoice(true, true)}
+              className="flex-1"
+              style={{ backgroundColor: primaryColor }}
+            >
+              Accept
+            </Button>
+            <Button
+              onClick={() => handleConsentChoice(false, false)}
+              variant="outline"
+              className="flex-1"
+            >
+              Decline
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500 text-center">
+            You can change this anytime in settings
+          </p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <>

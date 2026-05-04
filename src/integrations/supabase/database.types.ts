@@ -616,6 +616,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_score_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          new_score: number | null
+          new_status: string | null
+          old_score: number | null
+          old_status: string | null
+          reason: string | null
+          visitor_profile_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          new_score?: number | null
+          new_status?: string | null
+          old_score?: number | null
+          old_status?: string | null
+          reason?: string | null
+          visitor_profile_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          new_score?: number | null
+          new_status?: string | null
+          old_score?: number | null
+          old_status?: string | null
+          reason?: string | null
+          visitor_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_score_history_visitor_profile_id_fkey"
+            columns: ["visitor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "visitor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           budget_range: string | null
