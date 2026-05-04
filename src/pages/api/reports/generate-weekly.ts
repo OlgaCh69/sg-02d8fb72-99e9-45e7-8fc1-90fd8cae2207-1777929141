@@ -116,8 +116,8 @@ export default async function handler(
     const { data: report } = await supabase
       .from("weekly_reports")
       .insert({
-        report_week_start: weekStart.toISOString().split("T")[0],
-        report_week_end: weekEnd.toISOString().split("T")[0],
+        week_start: weekStart.toISOString().split("T")[0],
+        week_end: weekEnd.toISOString().split("T")[0],
         total_visitors: reportData.total_visitors,
         total_chats: reportData.total_chats,
         total_leads: reportData.total_leads,
@@ -126,7 +126,6 @@ export default async function handler(
         failed_crm_syncs: reportData.failed_crm_syncs,
         top_questions: topQuestions,
         best_converting_pages: bestPages,
-        report_data: reportData,
         sent_at: new Date().toISOString(),
       })
       .select()

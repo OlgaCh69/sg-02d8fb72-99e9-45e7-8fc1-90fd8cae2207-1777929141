@@ -33,7 +33,7 @@ export default function ReportsPage() {
       const { data } = await supabase
         .from("weekly_reports")
         .select("*")
-        .order("report_week_start", { ascending: false })
+        .order("week_start", { ascending: false })
         .limit(10);
       setReports(data || []);
     } catch (error) {
@@ -116,7 +116,7 @@ export default function ReportsPage() {
                   {reports.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="font-medium">
-                        {new Date(report.report_week_start).toLocaleDateString()} - {new Date(report.report_week_end).toLocaleDateString()}
+                        {new Date(report.week_start).toLocaleDateString()} - {new Date(report.week_end).toLocaleDateString()}
                       </TableCell>
                       <TableCell>{report.total_visitors}</TableCell>
                       <TableCell>{report.total_chats}</TableCell>
