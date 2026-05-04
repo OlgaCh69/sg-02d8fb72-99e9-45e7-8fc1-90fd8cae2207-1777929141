@@ -22,7 +22,7 @@ type Message = {
   id: string;
   role: string;
   content: string;
-  created_at: string;
+  timestamp: string;
   message_type: string;
   sent_by_admin: string | null;
 };
@@ -112,7 +112,7 @@ export default function LiveChatPage() {
         .from("messages")
         .select("*")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
+        .order("timestamp", { ascending: true });
 
       setMessages(data || []);
     } catch (error) {
@@ -377,7 +377,7 @@ export default function LiveChatPage() {
                               {getMessageSender(msg)}
                             </span>
                             <span className="text-xs text-slate-400">
-                              {new Date(msg.created_at).toLocaleTimeString()}
+                              {new Date(msg.timestamp).toLocaleTimeString()}
                             </span>
                           </div>
                           <div

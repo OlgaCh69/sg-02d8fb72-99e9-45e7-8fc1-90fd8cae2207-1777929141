@@ -34,7 +34,7 @@ export default async function handler(
           id,
           role,
           content,
-          created_at,
+          timestamp,
           message_type,
           sent_by_admin
         )
@@ -46,7 +46,7 @@ export default async function handler(
     const conversationsWithLastMessage = conversations?.map(conv => {
       const messages = conv.messages || [];
       const lastMessage = messages.sort((a: any, b: any) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       )[0];
 
       return {

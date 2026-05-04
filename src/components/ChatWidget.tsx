@@ -315,6 +315,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         source_type: null,
         source_url: null,
         metadata: {},
+        message_type: "system",
+        sent_by_admin: null,
       };
       setMessages([msg]);
     }
@@ -363,6 +365,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
           source_type: null,
           source_url: data.fileUrl,
           metadata: { file_url: data.fileUrl, file_name: file.name },
+          message_type: "user",
+          sent_by_admin: null,
         };
         setMessages((prev) => [...prev, fileMessage]);
       }
@@ -388,6 +392,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       source_type: null,
       source_url: null,
       metadata: {},
+      message_type: "user",
+      sent_by_admin: null,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -419,6 +425,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         source_type: data.sourceType || null,
         source_url: data.sourceUrl || null,
         metadata: {},
+        message_type: "ai",
+        sent_by_admin: null,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -439,6 +447,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         source_type: null,
         source_url: null,
         metadata: {},
+        message_type: "system",
+        sent_by_admin: null,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -497,6 +507,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
           source_type: null,
           source_url: null,
           metadata: {},
+          message_type: "system",
+          sent_by_admin: null,
         };
         setMessages((prev) => [...prev, thankYouMessage]);
       }
@@ -753,6 +765,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                       source_type: null,
                       source_url: null,
                       metadata: {},
+                      message_type: "system",
+                      sent_by_admin: null,
                     };
                     setMessages((prev) => [...prev, msg]);
                     setShowLeadForm(true);
