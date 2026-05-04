@@ -59,89 +59,96 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="flex">
+    <div className={`min-h-screen ${isDark ? "dark" : ""}`}>
+      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
         {/* Sidebar */}
-        <aside className="w-64 min-h-screen bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 sticky top-0">
-          <div className="p-6">
-            <div className="flex items-center gap-2 mb-8">
-              <MessageCircle className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">AI Assistant</h1>
-            </div>
-
-            <nav className="space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = router.pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-indigo-600 text-white dark:bg-indigo-500"
-                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-800 space-y-2">
-              {/* Theme Toggle */}
-              <div className="px-4 py-2">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Theme</p>
-                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                  <button
-                    onClick={() => setTheme("light")}
-                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-                      theme === "light"
-                        ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <Sun className="h-3.5 w-3.5" />
-                    Light
-                  </button>
-                  <button
-                    onClick={() => setTheme("dark")}
-                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-                      theme === "dark"
-                        ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <Moon className="h-3.5 w-3.5" />
-                    Dark
-                  </button>
-                  <button
-                    onClick={() => setTheme("system")}
-                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-                      theme === "system"
-                        ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <Monitor className="h-3.5 w-3.5" />
-                    Auto
-                  </button>
-                </div>
+        <div className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/onetech-logo.png" 
+                alt="O.N.E.Tech" 
+                className="h-10 w-10"
+              />
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white">O.N.E.Tech</h1>
+                <p className="text-xs text-slate-500 dark:text-slate-400">AI Assistant</p>
               </div>
-
-              <Button
-                variant="ghost"
-                onClick={handleLogout}
-                className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
-              >
-                <LogOut className="h-5 w-5 mr-3" />
-                Logout
-              </Button>
             </div>
           </div>
-        </aside>
+
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = router.pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-indigo-600 text-white dark:bg-indigo-500"
+                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="mt-8 pt-8 border-t border-slate-200 dark:border-slate-800 space-y-2">
+            {/* Theme Toggle */}
+            <div className="px-4 py-2">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Theme</p>
+              <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                <button
+                  onClick={() => setTheme("light")}
+                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+                    theme === "light"
+                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Sun className="h-3.5 w-3.5" />
+                  Light
+                </button>
+                <button
+                  onClick={() => setTheme("dark")}
+                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+                    theme === "dark"
+                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Moon className="h-3.5 w-3.5" />
+                  Dark
+                </button>
+                <button
+                  onClick={() => setTheme("system")}
+                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+                    theme === "system"
+                      ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Monitor className="h-3.5 w-3.5" />
+                  Auto
+                </button>
+              </div>
+            </div>
+
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800"
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              Logout
+            </Button>
+          </div>
+        </div>
 
         {/* Main Content */}
         <main className="flex-1 p-8">

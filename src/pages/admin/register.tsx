@@ -128,16 +128,21 @@ export default function RegisterPage() {
 
   return (
     <>
-      <SEO title="Register - AI Assistant Admin" />
+      <SEO title="Admin Registration - O.N.E.Tech AI Assistant" />
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-4">
-        <Card className="w-full max-w-2xl">
+        <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-              Register Your Business
-            </CardTitle>
-            <CardDescription>
-              Create an account to start using AI Assistant for your website
-            </CardDescription>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img 
+                src="/onetech-logo.png" 
+                alt="O.N.E.Tech" 
+                className="h-12 w-12"
+              />
+              <div className="text-left">
+                <CardTitle className="text-2xl">O.N.E.Tech AI Assistant</CardTitle>
+                <CardDescription>Create Admin Account</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
