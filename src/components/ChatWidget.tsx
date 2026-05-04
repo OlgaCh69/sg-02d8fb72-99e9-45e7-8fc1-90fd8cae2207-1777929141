@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, X, Send, Loader2, Info, Paperclip } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Info, Paperclip, Moon, Sun } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Message = Database["public"]["Tables"]["messages"]["Row"];
@@ -37,10 +37,12 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   const [showConsent, setShowConsent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     initializeWidget();
     loadSettings();
+    detectDarkMode();
   }, []);
 
   useEffect(() => {
@@ -52,6 +54,34 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       checkProactiveTriggers();
     }
   }, [triggerFired, isOpen, settings]);
+
+  const detectDarkMode = () => {
+    // Check if user has widget theme preference
+    const savedTheme = localStorage.getItem("ai_widget_theme");
+    if (savedTheme) {
+      setIsDarkMode(savedTheme === "dark");
+      return;
+    }
+
+    // Detect system dark mode
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    setIsDarkMode(mediaQuery.matches);
+
+    // Listen for system theme changes
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem("ai_widget_theme")) {
+        setIsDarkMode(e.matches);
+      }
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  };
+
+  const toggleWidgetTheme = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem("ai_widget_theme", newTheme);
+  };
 
   const initializeWidget = () => {
     // Load or create visitor ID
@@ -429,14 +459,22 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
     }
   };
 
-  const primaryColor = settings?.primary_color || "#4F46E5";
+  const primaryColor = isDarkMode 
+    ? (settings?.dark_mode_primary_color || "#6366F1") 
+    : (settings?.primary_color || "#4F46E5");
+
+  const bgColor = isDarkMode ? "bg-slate-900" : "bg-white";
+  const textColor = isDarkMode ? "text-white" : "text-slate-900";
+  const borderColor = isDarkMode ? "border-slate-700" : "border-slate-200";
+  const messageBg = isDarkMode ? "bg-slate-800" : "bg-slate-50";
+  const assistantBubble = isDarkMode ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200";
 
   if (!settings?.is_enabled) return null;
 
   // Show consent banner if not decided
   if (showConsent && isOpen) {
     return (
-      <Card className="fixed bottom-6 right-6 w-[380px] shadow-2xl z-50 overflow-hidden">
+      <Card className={`fixed bottom-6 right-6 w-[380px] shadow-2xl z-50 overflow-hidden ${bgColor} ${borderColor} transition-colors duration-300`}>
         <div
           className="flex items-center justify-between p-4 text-white"
           style={{ backgroundColor: primaryColor }}
@@ -454,13 +492,13 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <div className="p-4 space-y-4">
-          <p className="text-sm text-slate-600">
+        <div className={`p-4 space-y-4 ${textColor}`}>
+          <p className={`text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
             This AI assistant can remember your conversation to improve support and provide personalized help.
           </p>
           <div className="space-y-2">
-            <p className="text-xs font-medium text-slate-700">Your choices:</p>
-            <ul className="text-xs text-slate-600 space-y-1 ml-4 list-disc">
+            <p className={`text-xs font-medium ${isDarkMode ? "text-slate-400" : "text-slate-700"}`}>Your choices:</p>
+            <ul className={`text-xs ${isDarkMode ? "text-slate-400" : "text-slate-600"} space-y-1 ml-4 list-disc`}>
               <li>Remember my conversation for better support</li>
               <li>Track chat usage for analytics</li>
             </ul>
@@ -481,7 +519,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
               Decline
             </Button>
           </div>
-          <p className="text-xs text-slate-500 text-center">
+          <p className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-500"} text-center`}>
             You can change this anytime in settings
           </p>
         </div>
@@ -502,7 +540,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       )}
 
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-[380px] h-[600px] shadow-2xl flex flex-col z-50 overflow-hidden">
+        <Card className={`fixed bottom-6 right-6 w-[380px] h-[600px] shadow-2xl flex flex-col z-50 overflow-hidden ${bgColor} ${borderColor} transition-colors duration-300`}>
           <div
             className="flex items-center justify-between p-4 text-white"
             style={{ backgroundColor: primaryColor }}
@@ -514,27 +552,39 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                 <p className="text-xs opacity-90">We typically reply instantly</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="text-white hover:bg-white/20"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {settings?.support_dark_mode && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleWidgetTheme}
+                  className="text-white hover:bg-white/20"
+                >
+                  {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="text-white hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+          <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${messageBg} transition-colors duration-300`}>
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[80%] rounded-lg p-3 transition-colors duration-300 ${
                     message.role === "user"
                       ? "bg-primary text-white"
-                      : "bg-white border border-slate-200"
+                      : assistantBubble
                   }`}
                   style={
                     message.role === "user"
@@ -542,24 +592,25 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                       : {}
                   }
                 >
-                  <p className="text-sm">{message.content}</p>
+                  <p className={`text-sm ${message.role === "assistant" && isDarkMode ? "text-slate-100" : ""}`}>{message.content}</p>
                 </div>
               </div>
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-slate-200 rounded-lg p-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                <div className={`${assistantBubble} rounded-lg p-3 transition-colors duration-300`}>
+                  <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? "text-slate-400" : "text-slate-400"}`} />
                 </div>
               </div>
             )}
             {showLeadForm && (
-              <div className="bg-white border-2 border-primary rounded-lg p-4 space-y-3">
-                <p className="text-sm font-medium">Let's stay in touch!</p>
+              <div className={`border-2 rounded-lg p-4 space-y-3 transition-colors duration-300 ${isDarkMode ? "bg-slate-800 border-indigo-500" : "bg-white border-primary"}`}>
+                <p className={`text-sm font-medium ${textColor}`}>Let's stay in touch!</p>
                 <Input
                   placeholder="Your name"
                   value={leadForm.name}
                   onChange={(e) => setLeadForm({ ...leadForm, name: e.target.value })}
+                  className={isDarkMode ? "bg-slate-900 border-slate-700 text-white" : ""}
                 />
                 <Input
                   type="email"
@@ -567,17 +618,20 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                   value={leadForm.email}
                   onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })}
                   required
+                  className={isDarkMode ? "bg-slate-900 border-slate-700 text-white" : ""}
                 />
                 <Input
                   type="tel"
                   placeholder="Phone (optional)"
                   value={leadForm.phone}
                   onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })}
+                  className={isDarkMode ? "bg-slate-900 border-slate-700 text-white" : ""}
                 />
                 <Input
                   placeholder="Company (optional)"
                   value={leadForm.company}
                   onChange={(e) => setLeadForm({ ...leadForm, company: e.target.value })}
+                  className={isDarkMode ? "bg-slate-900 border-slate-700 text-white" : ""}
                 />
                 <Button
                   onClick={handleLeadSubmit}
@@ -591,7 +645,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 border-t bg-white">
+          <div className={`p-4 border-t ${borderColor} ${bgColor} transition-colors duration-300`}>
             <div className="flex gap-2">
               <input
                 type="file"
@@ -606,6 +660,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                   variant="outline"
                   size="sm"
                   disabled={uploadingFile}
+                  className={isDarkMode ? "border-slate-700 hover:bg-slate-800" : ""}
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
@@ -616,6 +671,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 disabled={loading}
+                className={isDarkMode ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500" : ""}
               />
               <Button
                 onClick={handleSendMessage}
@@ -652,7 +708,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                     setShowLeadForm(true);
                   }
                 }}
-                className="text-xs text-slate-500 hover:text-slate-700 underline"
+                className={`text-xs ${isDarkMode ? "text-slate-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"} underline transition-colors`}
               >
                 Request human support
               </button>

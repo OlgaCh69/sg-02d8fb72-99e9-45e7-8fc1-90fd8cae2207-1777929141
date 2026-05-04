@@ -1689,6 +1689,7 @@ export type Database = {
           id: string
           industry: string | null
           phone: string | null
+          preferred_theme: string | null
           updated_at: string | null
           website: string | null
         }
@@ -1702,6 +1703,7 @@ export type Database = {
           id: string
           industry?: string | null
           phone?: string | null
+          preferred_theme?: string | null
           updated_at?: string | null
           website?: string | null
         }
@@ -1715,6 +1717,7 @@ export type Database = {
           id?: string
           industry?: string | null
           phone?: string | null
+          preferred_theme?: string | null
           updated_at?: string | null
           website?: string | null
         }
@@ -2240,33 +2243,39 @@ export type Database = {
         Row: {
           allow_file_uploads: boolean | null
           button_text: string | null
+          dark_mode_primary_color: string | null
           id: string
           is_enabled: boolean | null
           lead_capture_enabled: boolean | null
           position: string | null
           primary_color: string | null
+          support_dark_mode: boolean | null
           updated_at: string | null
           welcome_message: string | null
         }
         Insert: {
           allow_file_uploads?: boolean | null
           button_text?: string | null
+          dark_mode_primary_color?: string | null
           id?: string
           is_enabled?: boolean | null
           lead_capture_enabled?: boolean | null
           position?: string | null
           primary_color?: string | null
+          support_dark_mode?: boolean | null
           updated_at?: string | null
           welcome_message?: string | null
         }
         Update: {
           allow_file_uploads?: boolean | null
           button_text?: string | null
+          dark_mode_primary_color?: string | null
           id?: string
           is_enabled?: boolean | null
           lead_capture_enabled?: boolean | null
           position?: string | null
           primary_color?: string | null
+          support_dark_mode?: boolean | null
           updated_at?: string | null
           welcome_message?: string | null
         }
