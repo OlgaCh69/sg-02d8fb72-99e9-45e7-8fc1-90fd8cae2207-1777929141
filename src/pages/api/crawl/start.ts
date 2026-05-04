@@ -77,16 +77,14 @@ export default async function handler(
           .trim();
 
         if (textContent.length > 100) {
-          // Save to knowledge base
-          await supabase.from("knowledge_base").insert({
-            question: title,
-            answer: textContent.substring(0, 2000),
-            category: "website_content",
-            is_enabled: true,
-            metadata: {
-              source_url: currentUrl,
-              crawled_at: new Date().toISOString(),
-            },
+          // Save to knowledge sources
+          await supabase.from("knowledge_sources").insert({
+            url: currentUrl,
+            title: title,
+            content: textContent.substring(0, 5000),
+            word_count: textContent.split(/\s+/).length,
+            approved: false,
+            last_crawled_at: new Date().toISOString()
           });
           knowledgeAdded++;
         }

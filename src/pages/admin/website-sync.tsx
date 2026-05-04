@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { SEO } from "@/components/SEO";
+import { useToast } from "@/hooks/use-toast";
 import {
   Globe,
   RefreshCw,
@@ -61,6 +62,7 @@ type CrawlLog = {
 
 export default function WebsiteSyncPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [crawling, setCrawling] = useState(false);
   const [settings, setSettings] = useState<CrawlSettings | null>(null);
@@ -191,7 +193,7 @@ export default function WebsiteSyncPage() {
 
       toast({
         title: "Success",
-        description: `Crawled ${data.pagesProcessed} pages and added ${data.knowledgeAdded} knowledge entries`,
+        description: `Crawled ${data.pagesProcessed || 0} pages and added ${data.knowledgeAdded || 0} knowledge entries`,
       });
 
       setCrawling(false);
