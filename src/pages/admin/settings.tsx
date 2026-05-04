@@ -15,6 +15,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
+    id: "1",
     is_enabled: true,
     welcome_message: "",
     primary_color: "#4F46E5",
@@ -51,6 +52,7 @@ export default function SettingsPage() {
 
       if (widgetData) {
         setSettings({
+          id: widgetData.id,
           is_enabled: widgetData.is_enabled ?? true,
           welcome_message: widgetData.welcome_message || "",
           primary_color: widgetData.primary_color || "#4F46E5",
@@ -92,7 +94,7 @@ export default function SettingsPage() {
           support_dark_mode: settings.support_dark_mode,
           allow_file_uploads: settings.allow_file_uploads,
         })
-        .eq("id", 1);
+        .eq("id", settings.id);
 
       alert("Widget settings saved successfully!");
     } catch (error) {
