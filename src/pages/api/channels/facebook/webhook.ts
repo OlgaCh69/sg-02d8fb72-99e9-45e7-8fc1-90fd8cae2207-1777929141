@@ -98,24 +98,38 @@ async function handleFacebookMessage(messaging: any, settings: any) {
     profile = newProfile;
   }
 
+  // Get or create visitor profile
+  let { data: visitorProfile } = await supabase
+    .from("visitor_profiles")
+    .select("id")
+    .eq("visitor_id", `facebook_${senderId}`)
+    .single();
+
+  if (!visitorProfile) {
+    const { data: newProfile } = await supabase
+      .from("visitor_profiles")
+      .insert({ visitor_id: `facebook_${senderId}` })
+      .select()
+      .single();
+    visitorProfile = newProfile;
+  }
+
   // Get or create conversation
   let { data: conversation } = await supabase
     .from("conversations")
     .select("*")
-    .eq("visitor_id", `facebook_${senderId}`)
+    .eq("visitor_profile_id", visitorProfile?.id)
     .eq("status", "active")
     .single();
 
-  if (!conversation) {
+  if (!conversation && visitorProfile) {
     const { data: newConversation } = await supabase
       .from("conversations")
       .insert({
-        visitor_id: `facebook_${senderId}`,
-        session_id: `facebook_session_${Date.now()}`,
+        visitor_profile_id: visitorProfile.id,
         channel: "facebook",
         status: "active",
-        metadata: { social_profile_id: profile?.id },
-      })
+      } as any)
       .select()
       .single();
     conversation = newConversation;

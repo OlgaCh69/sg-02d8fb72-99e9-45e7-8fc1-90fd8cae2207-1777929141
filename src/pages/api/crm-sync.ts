@@ -80,10 +80,8 @@ export default async function handler(
         .eq("id", leadId);
 
       await supabase.from("analytics_events").insert({
-        event_type: "crm_synced",
-        visitor_id: lead.visitor_id || "unknown",
-        session_id: lead.conversations?.session_id || "unknown",
-        metadata: { lead_id: leadId, crm_provider: settings.provider },
+        event_name: "crm_synced",
+        metadata: { lead_id: leadId, crm_provider: settings.provider, visitor_id: lead.visitor_id, session_id: lead.conversations?.session_id },
       });
 
       return res.status(200).json({ success: true });

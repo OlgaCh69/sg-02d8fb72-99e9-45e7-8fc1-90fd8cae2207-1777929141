@@ -66,7 +66,7 @@ export default function DashboardPage() {
     try {
       const { data: events } = await supabase
         .from("analytics_events")
-        .select("event_type, visitor_id");
+        .select("event_name, visitor_profile_id");
 
       const { data: conversations } = await supabase
         .from("conversations")
@@ -76,8 +76,8 @@ export default function DashboardPage() {
         .from("leads")
         .select("id, metadata");
 
-      const uniqueVisitors = new Set(events?.map(e => e.visitor_id) || []).size;
-      const chatOpens = events?.filter(e => e.event_type === "chat_opened").length || 0;
+      const uniqueVisitors = new Set(events?.map(e => e.visitor_profile_id) || []).size;
+      const chatOpens = events?.filter(e => e.event_name === "chat_opened").length || 0;
       const totalLeads = leads?.length || 0;
       const conversionRate = conversations && conversations.length > 0
         ? Math.round((totalLeads / conversations.length) * 100)

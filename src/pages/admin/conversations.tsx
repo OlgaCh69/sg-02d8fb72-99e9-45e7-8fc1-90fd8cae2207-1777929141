@@ -63,7 +63,7 @@ export default function ConversationsPage() {
   const exportToCSV = () => {
     const headers = ["Visitor ID", "Channel", "Page URL", "Status", "Device", "Browser", "Started At", "Ended At", "Message Count", "Handover Requested", "Trigger Type"];
     const csvData = conversations.map(conv => [
-      conv.visitor_id,
+      conv.visitor_profile_id || "Unknown",
       conv.channel || "website",
       conv.page_url || "",
       conv.status,
@@ -90,7 +90,7 @@ export default function ConversationsPage() {
   };
 
   const filteredConversations = conversations.filter((conv) =>
-    conv.visitor_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (conv.visitor_profile_id || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     conv.page_url?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -164,7 +164,7 @@ export default function ConversationsPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      Visitor: {conversation.visitor_id.slice(0, 12)}...
+                      Visitor: {(conversation.visitor_profile_id || "Unknown").slice(0, 12)}...
                       <Badge className={getStatusColor(conversation.status)}>{conversation.status}</Badge>
                       {conversation.handover_requested && (
                         <Badge className="bg-orange-100 text-orange-800">Handover Requested</Badge>

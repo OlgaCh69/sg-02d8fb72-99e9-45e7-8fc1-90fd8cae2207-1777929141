@@ -132,11 +132,9 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   const trackEvent = async (eventType: string, metadata?: any) => {
     try {
       await supabase.from("analytics_events").insert({
-        event_type: eventType,
-        visitor_id: visitorId,
-        session_id: sessionId,
+        event_name: eventType,
         page_url: window.location.href,
-        metadata: metadata || {},
+        metadata: { ...metadata, visitor_id: visitorId, session_id: sessionId },
       });
     } catch (error) {
       console.error("Error tracking event:", error);
@@ -155,8 +153,6 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       const { data } = await supabase
         .from("conversations")
         .insert({
-          visitor_id: visitorId,
-          session_id: sessionId,
           page_url: window.location.href,
           page_title: pageTitle,
           referrer: referrer || null,
@@ -164,7 +160,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
           status: "active",
           device: /mobile/i.test(navigator.userAgent) ? "mobile" : "desktop",
           browser: navigator.userAgent.split(" ").pop() || "unknown",
-        })
+        } as any)
         .select()
         .single();
 
@@ -193,13 +189,13 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
 
           // Check if we know this user
           const { data: profiles } = await supabase
-            .from("user_profiles")
-            .select("full_name")
+            .from("visitor_profiles")
+            .select("name")
             .eq("visitor_id", visitorId)
             .limit(1);
           
-          if (profiles && profiles.length > 0 && profiles[0].full_name) {
-            greeting = `Welcome back, ${profiles[0].full_name.split(' ')[0]}! ${greeting}`;
+          if (profiles && profiles.length > 0 && profiles[0].name) {
+            greeting = `Welcome back, ${profiles[0].name.split(' ')[0]}! ${greeting}`;
           } else if (profiles && profiles.length > 0) {
             greeting = `Welcome back! ${greeting}`;
           }
@@ -337,12 +333,12 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       // Update AI User Profile Memory with the captured details
       try {
         await supabase
-          .from("user_profiles")
+          .from("visitor_profiles")
           .update({
             email: leadForm.email,
-            full_name: leadForm.name,
+            name: leadForm.name,
             phone: leadForm.phone,
-            lead_status: "warm"
+            lead_status: "WARM"
           })
           .eq("visitor_id", visitorId);
       } catch (memError) {
