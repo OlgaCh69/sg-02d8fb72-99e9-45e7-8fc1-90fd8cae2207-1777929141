@@ -38,6 +38,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     router.push("/admin/login");
   };
 
+  const isDark = actualTheme === "dark";
+
   const navItems = [
     { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/admin/conversations", icon: MessageSquare, label: "Conversations" },
