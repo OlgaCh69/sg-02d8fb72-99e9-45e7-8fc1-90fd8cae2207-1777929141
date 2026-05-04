@@ -211,6 +211,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
           timestamp: new Date().toISOString(),
           source_type: null,
           source_url: null,
+          metadata: {},
         };
         setMessages([msg]);
       }
@@ -245,6 +246,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       timestamp: new Date().toISOString(),
       source_type: null,
       source_url: null,
+      metadata: {},
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -278,6 +280,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         timestamp: new Date().toISOString(),
         source_type: data.sourceType || null,
         source_url: data.sourceUrl || null,
+        metadata: {},
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -305,6 +308,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
         timestamp: new Date().toISOString(),
         source_type: null,
         source_url: null,
+        metadata: {},
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -358,6 +362,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
           timestamp: new Date().toISOString(),
           source_type: null,
           source_url: null,
+          metadata: {},
         };
         setMessages((prev) => [...prev, thankYouMessage]);
       }
@@ -510,6 +515,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
                       timestamp: new Date().toISOString(),
                       source_type: null,
                       source_url: null,
+                      metadata: {},
                     };
                     setMessages((prev) => [...prev, msg]);
                     setShowLeadForm(true);
