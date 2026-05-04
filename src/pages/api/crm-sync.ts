@@ -19,7 +19,7 @@ export default async function handler(
     // Get lead details
     const { data: lead } = await supabase
       .from("leads")
-      .select("*, conversations(visitor_profile_id, channel, started_at)")
+      .select("*, conversations(*)")
       .eq("id", leadId)
       .single();
 
@@ -93,12 +93,12 @@ export default async function handler(
       lead_status: profile?.lead_status || "UNKNOWN",
       
       // Source tracking
-      page_url: lead.page_url || "",
-      page_title: lead.page_title || "",
-      source: lead.source || "",
-      referrer: lead.referrer || "",
-      device: profile?.device || "",
-      country: profile?.country || "",
+      page_url: lead.conversations?.page_url || "",
+      page_title: lead.conversations?.page_title || "",
+      source: profile?.source || "",
+      referrer: lead.conversations?.referrer || "",
+      device: lead.conversations?.device || "",
+      country: lead.conversations?.country || "",
       
       // Conversation data
       conversation_summary: summary?.summary || "",
@@ -106,7 +106,7 @@ export default async function handler(
       full_transcript: messages?.map(m => `[${m.role}]: ${m.content}`).join("\n") || "",
       
       // Metadata
-      created_at: lead.created_at,
+      captured_at: lead.captured_at,
       conversation_started_at: lead.conversations?.started_at,
       channel: lead.conversations?.channel || "website",
     };
@@ -125,10 +125,9 @@ export default async function handler(
 
     // Log sync attempt
     await supabase.from("crm_sync_logs").insert({
-      lead_id: leadId,
-      crm_provider: crmSettings.provider || "Custom",
-      sync_status: success ? "success" : "failed",
-      response_code: response.status,
+      conversation_id: lead.conversation_id,
+      visitor_profile_id: profile?.id,
+      status: success ? "success" : "failed",
       error_message: success ? null : await response.text(),
       payload: crmPayload,
     });
@@ -137,8 +136,7 @@ export default async function handler(
     await supabase
       .from("leads")
       .update({
-        synced_to_crm: success,
-        crm_sync_at: success ? new Date().toISOString() : null,
+        crm_synced: success,
       })
       .eq("id", leadId);
 
@@ -159,9 +157,7 @@ export default async function handler(
     // Log failed sync
     try {
       await supabase.from("crm_sync_logs").insert({
-        lead_id: req.body.leadId,
-        crm_provider: "Unknown",
-        sync_status: "failed",
+        status: "failed",
         error_message: String(error),
       });
     } catch (logError) {
