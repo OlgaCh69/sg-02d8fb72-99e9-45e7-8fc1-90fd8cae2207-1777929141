@@ -57,11 +57,13 @@ export default async function handler(
     // Send via configured delivery methods
     for (const setting of settings) {
       try {
+        const config = setting.delivery_config as Record<string, string> | null;
+        
         if (setting.delivery_method === "email") {
           // TODO: Integrate email service
           console.log("Email notification:", { title, message });
         } else if (setting.delivery_method === "webhook") {
-          const webhookUrl = setting.delivery_config?.webhook_url;
+          const webhookUrl = config?.webhook_url;
           if (webhookUrl) {
             await fetch(webhookUrl, {
               method: "POST",
@@ -70,7 +72,7 @@ export default async function handler(
             });
           }
         } else if (setting.delivery_method === "slack") {
-          const slackUrl = setting.delivery_config?.slack_webhook_url;
+          const slackUrl = config?.slack_webhook_url;
           if (slackUrl) {
             await fetch(slackUrl, {
               method: "POST",

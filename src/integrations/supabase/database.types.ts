@@ -2208,6 +2208,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_lead_score: {
+        Args: { profile_id: string; score_change: number }
+        Returns: undefined
+      }
       increment_user_conversations: {
         Args: { profile_id: string }
         Returns: undefined
