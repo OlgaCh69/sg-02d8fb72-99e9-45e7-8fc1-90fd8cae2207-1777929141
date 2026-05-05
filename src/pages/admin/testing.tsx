@@ -7,31 +7,66 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
 import { Send, RotateCcw, CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TestingPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
 
   const handleTest = async () => {
-    if (!message.trim()) return;
+    if (!message.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a test message",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
+    setResponse(null);
     try {
       const res = await fetch("/api/test/demo-conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userMessage: message }),
+        body: JSON.stringify({ userMessage: message, sessionId: `test_${Date.now()}` }),
       });
 
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Test failed");
+      }
+
       const data = await res.json();
-      setResponse(data);
+      
+      // Analyze the AI response if backend didn't provide metrics
+      const aiText = data.response || data.aiResponse || data.message || "";
+      const metrics = data.metrics || analyzeResponse(aiText);
+      
+      setResponse({
+        ...data,
+        aiResponse: aiText,
+        metrics,
+        passesRules: data.passesRules ?? (metrics.withinWordLimit && metrics.sentenceStructure && metrics.askedQualifyingQuestions)
+      });
       setHistory(data.messageHistory || []);
       setMessage("");
-    } catch (error) {
+
+      toast({
+        title: "✅ Test Complete",
+        description: "Response analyzed successfully",
+      });
+    } catch (error: any) {
       console.error("Test error:", error);
+      toast({
+        title: "Test Failed",
+        description: error.message || "Failed to process test message",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -109,63 +144,6 @@ export default function TestingPage() {
         Fail
       </Badge>
     );
-  };
-
-  const handleTestMessage = async () => {
-    if (!testMessage.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a test message",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setTesting(true);
-    setTestResponse(null);
-
-    try {
-      const response = await fetch("/api/test/demo-conversation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: testMessage,
-          sessionId: `test_${Date.now()}`,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Test failed");
-      }
-
-      const data = await response.json();
-      
-      // Analyze the AI response
-      const metrics = analyzeResponse(data.response || data.message || "");
-      
-      setTestResponse({
-        query: testMessage,
-        response: data.response || data.message || "",
-        sources: data.sources || [],
-        confidence: data.confidence || 0,
-        metrics,
-      });
-
-      toast({
-        title: "✅ Test Complete",
-        description: "Response analyzed successfully",
-      });
-    } catch (error: any) {
-      console.error("Test error:", error);
-      toast({
-        title: "Test Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setTesting(false);
-    }
   };
 
   return (
