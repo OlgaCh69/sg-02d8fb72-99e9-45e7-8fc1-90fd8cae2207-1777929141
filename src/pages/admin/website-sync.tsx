@@ -153,6 +153,9 @@ export default function WebsiteSyncPage() {
   };
 
   const handleStartCrawl = async () => {
+    console.log("=== STARTING CRAWL ===");
+    console.log("Form data:", formData);
+
     if (!formData.website_url.trim()) {
       toast({
         title: "Error",
@@ -163,48 +166,66 @@ export default function WebsiteSyncPage() {
     }
 
     // Validate URL format
+    let validUrl: string;
     try {
-      new URL(formData.website_url);
+      const url = new URL(formData.website_url.trim());
+      validUrl = url.href;
+      console.log("✅ Valid URL:", validUrl);
     } catch (e) {
+      console.error("❌ Invalid URL:", formData.website_url, e);
       toast({
-        title: "Error",
-        description: "Please enter a valid URL (e.g., https://example.com)",
+        title: "Invalid URL",
+        description: "Please enter a valid URL like https://example.com",
         variant: "destructive",
       });
       return;
     }
 
     setCrawling(true);
+    
     try {
+      const requestBody = { 
+        startUrl: validUrl,
+        maxPages: formData.max_pages || 10
+      };
+      
+      console.log("📤 Sending request:", requestBody);
+
       const response = await fetch("/api/crawl/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          startUrl: formData.website_url,
-          maxPages: formData.max_pages 
-        }),
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       });
 
+      console.log("📥 Response status:", response.status);
+
       const data = await response.json();
+      console.log("📥 Response data:", data);
 
       if (!response.ok) {
-        throw new Error(data.error || "Crawl failed");
+        throw new Error(data.message || data.error || `HTTP ${response.status}`);
       }
 
       toast({
-        title: "Success",
-        description: `Crawled ${data.pagesProcessed || 0} pages and added ${data.knowledgeAdded || 0} knowledge entries`,
+        title: "✅ Crawl Complete!",
+        description: `Successfully crawled ${data.pagesProcessed || 0} pages and added ${data.knowledgeAdded || 0} knowledge entries`,
       });
 
-      setCrawling(false);
+      // Reload the page data
       loadData();
+      
     } catch (error: any) {
-      console.error("Crawl error:", error);
+      console.error("=== CRAWL ERROR ===");
+      console.error(error);
+      
       toast({
         title: "Crawl Failed",
-        description: error.message || "Failed to crawl website",
+        description: error.message || "Failed to crawl website. Check console for details.",
         variant: "destructive",
       });
+    } finally {
       setCrawling(false);
     }
   };
