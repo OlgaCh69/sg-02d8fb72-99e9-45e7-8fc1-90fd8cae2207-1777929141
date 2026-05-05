@@ -40,6 +40,7 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isTakenOver, setIsTakenOver] = useState(false);
   const [adminName, setAdminName] = useState<string>("");
+  const [autoOpened, setAutoOpened] = useState(false);
   const initialMessages: Message[] = [
     {
       id: "welcome-1",
@@ -76,6 +77,24 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       subscribeToMessages();
     }
   }, [conversationId]);
+
+  // Auto-open chat after 10 seconds
+  useEffect(() => {
+    // Check if already auto-opened this session
+    const hasAutoOpened = sessionStorage.getItem("ai_chat_auto_opened");
+    
+    if (!hasAutoOpened && !isOpen && settings?.is_enabled) {
+      const timer = setTimeout(() => {
+        if (!isOpen && !autoOpened) {
+          setAutoOpened(true);
+          sessionStorage.setItem("ai_chat_auto_opened", "true");
+          handleOpen("auto_10s");
+        }
+      }, 10000); // 10 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, settings, autoOpened]);
 
   const subscribeToMessages = () => {
     if (!conversationId) return;
@@ -314,6 +333,8 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       
       if (!data.isWorkingHours) {
         greeting = "Thanks for reaching out! We're currently outside business hours. Leave your details and we'll get back to you soon.";
+      } else if (triggerType === "auto_10s") {
+        greeting = "Hi there! 👋 I noticed you're browsing — want to see how AI could help your business capture more leads?";
       } else if (data.returningUser && data.userName) {
         greeting = `Welcome back, ${data.userName.split(' ')[0]}! ${greeting}`;
       } else if (data.returningUser) {
