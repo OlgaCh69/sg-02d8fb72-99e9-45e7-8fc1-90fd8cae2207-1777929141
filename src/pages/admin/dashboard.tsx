@@ -116,6 +116,55 @@ export default function DashboardPage() {
     }
   };
 
+  const loadAnalytics = async () => {
+    setLoading(true);
+
+    // Get analytics events
+    const { data: analyticsData } = await supabase
+      .from("analytics_events")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (analyticsData) {
+      // Count unique visitors (by visitor_id)
+      const uniqueVisitors = new Set(analyticsData.map(e => e.visitor_id)).size;
+      
+      // Count chat events
+      const chatOpened = analyticsData.filter(e => e.event_type === "chat_opened").length;
+      const messagesSent = analyticsData.filter(e => e.event_type === "message_sent").length;
+
+      setStats({
+        ...stats,
+        visitors: uniqueVisitors,
+        chats: chatOpened,
+        messages: messagesSent,
+      });
+    }
+
+    // Get leads
+    const { data: leadsData } = await supabase
+      .from("leads")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (leadsData) {
+      setStats(prev => ({ ...prev, leads: leadsData.length }));
+      setRecentLeads(leadsData.slice(0, 5));
+    }
+
+    // Get conversations
+    const { data: conversationsData } = await supabase
+      .from("conversations")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (conversationsData) {
+      setRecentConversations(conversationsData.slice(0, 5));
+    }
+
+    setLoading(false);
+  };
+
   if (loading) {
     return (
       <AdminLayout>

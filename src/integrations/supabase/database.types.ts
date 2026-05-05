@@ -1752,6 +1752,36 @@ export type Database = {
         }
         Relationships: []
       }
+      proactive_triggers: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          name: string
+          trigger_type: string
+          trigger_value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          name: string
+          trigger_type: string
+          trigger_value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          name?: string
+          trigger_type?: string
+          trigger_value?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string | null
