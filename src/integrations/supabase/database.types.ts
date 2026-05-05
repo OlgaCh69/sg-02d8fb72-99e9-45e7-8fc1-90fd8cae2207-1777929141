@@ -1,4 +1,4 @@
- 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 export type Json =
   | string
   | number
@@ -1304,6 +1304,47 @@ export type Database = {
           query_text?: string
         }
         Relationships: []
+      }
+      knowledge_chunks: {
+        Row: {
+          approved: boolean | null
+          chunk_index: number
+          chunk_text: string
+          created_at: string | null
+          embedding_status: string | null
+          id: string
+          updated_at: string | null
+          website_page_id: string | null
+        }
+        Insert: {
+          approved?: boolean | null
+          chunk_index: number
+          chunk_text: string
+          created_at?: string | null
+          embedding_status?: string | null
+          id?: string
+          updated_at?: string | null
+          website_page_id?: string | null
+        }
+        Update: {
+          approved?: boolean | null
+          chunk_index?: number
+          chunk_text?: string
+          created_at?: string | null
+          embedding_status?: string | null
+          id?: string
+          updated_at?: string | null
+          website_page_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_chunks_website_page_id_fkey"
+            columns: ["website_page_id"]
+            isOneToOne: false
+            referencedRelation: "website_pages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       knowledge_sources: {
         Row: {
@@ -2668,6 +2709,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      website_pages: {
+        Row: {
+          approved: boolean | null
+          content_hash: string | null
+          created_at: string | null
+          error_message: string | null
+          excluded: boolean | null
+          extracted_content: string | null
+          id: string
+          last_crawled_at: string | null
+          status: string
+          title: string | null
+          updated_at: string | null
+          url: string
+          word_count: number | null
+        }
+        Insert: {
+          approved?: boolean | null
+          content_hash?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          excluded?: boolean | null
+          extracted_content?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string | null
+          url: string
+          word_count?: number | null
+        }
+        Update: {
+          approved?: boolean | null
+          content_hash?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          excluded?: boolean | null
+          extracted_content?: string | null
+          id?: string
+          last_crawled_at?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string | null
+          url?: string
+          word_count?: number | null
+        }
+        Relationships: []
       }
       weekly_reports: {
         Row: {
