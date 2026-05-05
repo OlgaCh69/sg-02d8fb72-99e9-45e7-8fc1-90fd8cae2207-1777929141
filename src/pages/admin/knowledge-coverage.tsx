@@ -109,28 +109,47 @@ export default function KnowledgeCoveragePage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log("🔄 Loading Knowledge Coverage data...");
 
       // Load pages
-      const { data: pagesData } = await supabase
+      console.log("📄 Fetching website_pages...");
+      const { data: pagesData, error: pagesError } = await supabase
         .from("website_pages")
         .select("*")
         .order("created_at", { ascending: false });
 
+      if (pagesError) {
+        console.error("❌ Error loading pages:", pagesError);
+        throw pagesError;
+      }
+
+      console.log("✅ Pages loaded:", pagesData?.length || 0);
+      console.log("📊 Pages data:", pagesData);
       setPages(pagesData || []);
 
       // Load recent logs
-      const { data: logsData } = await supabase
+      console.log("📋 Fetching crawl_logs...");
+      const { data: logsData, error: logsError } = await supabase
         .from("crawl_logs")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(10);
 
+      if (logsError) {
+        console.error("❌ Error loading logs:", logsError);
+        throw logsError;
+      }
+
+      console.log("✅ Logs loaded:", logsData?.length || 0);
+      console.log("📊 Logs data:", logsData);
       setLogs(logsData || []);
+
+      console.log("✅ Knowledge Coverage data loaded successfully");
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("❌ Error loading data:", error);
       toast({
         title: "Error",
-        description: "Failed to load knowledge coverage data",
+        description: "Failed to load knowledge coverage data. Check console for details.",
         variant: "destructive",
       });
     } finally {
