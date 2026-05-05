@@ -53,6 +53,50 @@ export default function TestingPage() {
     }
   };
 
+  const analyzeResponse = (text: string) => {
+    if (!text || text.trim().length === 0) {
+      return {
+        wordCount: 0,
+        withinWordLimit: false,
+        sentenceCount: 0,
+        sentenceStructure: false,
+        questionsAsked: 0,
+        askedQualifyingQuestions: false,
+        personalizedElements: 0,
+        personalized: false,
+        usedKnowledgeBase: false,
+      };
+    }
+
+    const words = text.trim().split(/\s+/).length;
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+    const questions = (text.match(/\?/g) || []).length;
+    
+    // Count personalization indicators
+    const personalizationPatterns = [
+      /\b(you|your|you're)\b/gi,
+      /\b(I|I'm|I'll|we|we're|our)\b/gi,
+      /\b(help|assist|support)\b/gi,
+    ];
+    
+    const personalizedElements = personalizationPatterns.reduce((count, pattern) => {
+      const matches = text.match(pattern);
+      return count + (matches ? matches.length : 0);
+    }, 0);
+
+    return {
+      wordCount: words,
+      withinWordLimit: words >= 40 && words <= 120,
+      sentenceCount: sentences,
+      sentenceStructure: sentences >= 3 && sentences <= 5,
+      questionsAsked: questions,
+      askedQualifyingQuestions: questions <= 1 && questions > 0,
+      personalizedElements,
+      personalized: personalizedElements >= 3,
+      usedKnowledgeBase: text.includes('automation') || text.includes('O.N.E') || text.includes('solution'),
+    };
+  };
+
   const getRuleStatus = (passes: boolean) => {
     return passes ? (
       <Badge variant="default" className="bg-green-600">
@@ -65,6 +109,63 @@ export default function TestingPage() {
         Fail
       </Badge>
     );
+  };
+
+  const handleTestMessage = async () => {
+    if (!testMessage.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a test message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTesting(true);
+    setTestResponse(null);
+
+    try {
+      const response = await fetch("/api/test/demo-conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: testMessage,
+          sessionId: `test_${Date.now()}`,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Test failed");
+      }
+
+      const data = await response.json();
+      
+      // Analyze the AI response
+      const metrics = analyzeResponse(data.response || data.message || "");
+      
+      setTestResponse({
+        query: testMessage,
+        response: data.response || data.message || "",
+        sources: data.sources || [],
+        confidence: data.confidence || 0,
+        metrics,
+      });
+
+      toast({
+        title: "✅ Test Complete",
+        description: "Response analyzed successfully",
+      });
+    } catch (error: any) {
+      console.error("Test error:", error);
+      toast({
+        title: "Test Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setTesting(false);
+    }
   };
 
   return (
@@ -177,65 +278,65 @@ export default function TestingPage() {
                   </div>
 
                   {/* Metrics */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border dark:border-slate-700 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium dark:text-white">Word Count</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Target: 40-120 words
-                        </p>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium dark:text-gray-300">Word Count</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold dark:text-white">
+                            {response.metrics?.wordCount || 0}
+                          </span>
+                          {getRuleStatus(response.metrics?.withinWordLimit || false)}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics?.wordCount || 0}
-                        </span>
-                        {getRuleStatus(response.metrics?.withinWordLimit)}
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Target: 40-120 words
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border dark:border-slate-700 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium dark:text-white">Sentence Count</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Target: 3-5 sentences
-                        </p>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium dark:text-gray-300">Sentence Count</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold dark:text-white">
+                            {response.metrics?.sentenceCount || 0}
+                          </span>
+                          {getRuleStatus(response.metrics?.sentenceStructure || false)}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics?.sentenceCount || 0}
-                        </span>
-                        {getRuleStatus(response.metrics?.sentenceStructure)}
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Target: 3-5 sentences
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border dark:border-slate-700 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium dark:text-white">Question Count</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Target: ≤1 question
-                        </p>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium dark:text-gray-300">Question Count</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold dark:text-white">
+                            {response.metrics?.questionsAsked || 0}
+                          </span>
+                          {getRuleStatus(response.metrics?.askedQualifyingQuestions || false)}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics?.questionsAsked || 0}
-                        </span>
-                        {getRuleStatus(response.metrics?.askedQualifyingQuestions)}
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Target: ≤1 question
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border dark:border-slate-700 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium dark:text-white">Paragraph Count</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Keep minimal
-                        </p>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium dark:text-gray-300">Paragraph Count</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold dark:text-white">
+                            {response.metrics?.personalizedElements || 0}
+                          </span>
+                          {getRuleStatus(response.metrics?.personalized || false)}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics?.personalizedElements || 0}
-                        </span>
-                        {getRuleStatus(response.metrics?.personalized)}
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Keep minimal
+                      </p>
                     </div>
                   </div>
 
