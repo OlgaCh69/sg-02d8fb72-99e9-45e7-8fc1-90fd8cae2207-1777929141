@@ -185,6 +185,54 @@ export type Database = {
           },
         ]
       }
+      ai_config: {
+        Row: {
+          created_at: string | null
+          custom_instructions: string | null
+          fallback_message: string | null
+          greeting_message: string | null
+          id: string
+          is_active: boolean | null
+          max_tokens: number | null
+          personality_traits: string[] | null
+          response_style: string | null
+          system_prompt: string
+          temperature: number | null
+          tone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          custom_instructions?: string | null
+          fallback_message?: string | null
+          greeting_message?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          personality_traits?: string[] | null
+          response_style?: string | null
+          system_prompt?: string
+          temperature?: number | null
+          tone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          custom_instructions?: string | null
+          fallback_message?: string | null
+          greeting_message?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_tokens?: number | null
+          personality_traits?: string[] | null
+          response_style?: string | null
+          system_prompt?: string
+          temperature?: number | null
+          tone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           browser: string | null

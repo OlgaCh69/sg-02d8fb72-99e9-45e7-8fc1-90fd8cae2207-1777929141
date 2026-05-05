@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { calculateConfidence, shouldAnswerWithConfidence, getLowConfidenceFallback } from "./confidence";
 import { detectSpam, detectPromptInjection, checkRateLimit } from "../security/check-spam";
 import { selectPlaybook } from "../playbooks/execute";
+import OpenAI from "openai";
 
 export default async function handler(
   req: NextApiRequest,
@@ -231,8 +232,39 @@ CURRENT USER MESSAGE:
     processedPrompt = processedPrompt.replace(/\{\{knowledge_chunks\}\}/g, knowledgeContext);
     processedPrompt = processedPrompt.replace(/\{\{user_message\}\}/g, message);
 
-    // 10. Generate AI response (simulated - replace with actual OpenAI call)
-    const aiResponse = `Thank you for your message. ${knowledgeChunks.length > 0 ? "Based on our knowledge base, " : ""}I'd be happy to help you with that. ${intent === "pricing_inquiry" ? "Pricing depends on your specific needs. Could you tell me more about what you're looking for?" : ""}`;
+    // Load AI configuration
+    const { data: aiConfig } = await supabase
+      .from("ai_config")
+      .select("*")
+      .eq("is_active", true)
+      .single();
+
+    const systemPrompt = aiConfig?.system_prompt || 
+      'You are a helpful AI assistant for a business. Answer questions professionally and concisely.';
+    
+    const customInstructions = aiConfig?.custom_instructions || '';
+    const fullSystemPrompt = `${systemPrompt}\n\n${customInstructions}`.trim();
+
+    // Call OpenAI
+    const openai = new OpenAI();
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: fullSystemPrompt,
+        },
+        ...(recentMessages || []).map((msg: any) => ({
+          role: msg.role === "user" ? "user" : "assistant",
+          content: msg.content,
+        })),
+        { role: "user", content: message },
+      ],
+      temperature: aiConfig?.temperature || 0.7,
+      max_tokens: aiConfig?.max_tokens || 200,
+    });
+
+    const aiResponse = completion.choices[0]?.message?.content || "";
 
     // 11. Calculate confidence score
     const confidence = calculateConfidence({
