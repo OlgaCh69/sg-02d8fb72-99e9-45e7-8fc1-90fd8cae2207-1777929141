@@ -60,12 +60,12 @@ function extractLinks(html: string, baseUrl: string): string[] {
         const skipPatterns = [
           '/wp-admin', '/wp-login', '/admin/', '/login',
           '.pdf', '.jpg', '.png', '.gif', '.zip', '.xml',
-          '/feed', '/rss', '/sitemap'
+          '/feed', '/rss'
         ];
         
         const shouldSkip = skipPatterns.some(pattern => cleanUrl.includes(pattern));
         
-        if (!shouldSkip && cleanUrl !== baseUrl) {
+        if (!shouldSkip) {
           links.add(cleanUrl);
         }
       }
@@ -75,6 +75,51 @@ function extractLinks(html: string, baseUrl: string): string[] {
   });
   
   return Array.from(links);
+}
+
+// Parse sitemap.xml to find all URLs
+async function parseSitemap(baseUrl: string): Promise<string[]> {
+  const urls: Set<string> = new Set();
+  const baseDomain = new URL(baseUrl).hostname;
+  
+  try {
+    console.log("🗺️ Checking sitemap.xml...");
+    const sitemapUrls = [
+      `${new URL(baseUrl).origin}/sitemap.xml`,
+      `${new URL(baseUrl).origin}/sitemap_index.xml`,
+    ];
+    
+    for (const sitemapUrl of sitemapUrls) {
+      try {
+        const response = await fetch(sitemapUrl);
+        if (response.ok) {
+          const xml = await response.text();
+          const $ = cheerio.load(xml, { xmlMode: true });
+          
+          $('url > loc, sitemap > loc').each((_, element) => {
+            const url = $(element).text().trim();
+            try {
+              const urlObj = new URL(url);
+              if (urlObj.hostname === baseDomain) {
+                urls.add(url);
+              }
+            } catch (e) {
+              // Invalid URL
+            }
+          });
+          
+          console.log(`✅ Found ${urls.size} URLs in sitemap`);
+          break;
+        }
+      } catch (e) {
+        // Try next sitemap URL
+      }
+    }
+  } catch (error) {
+    console.log("⚠️ No sitemap.xml found, using link discovery only");
+  }
+  
+  return Array.from(urls);
 }
 
 // Fetch and parse a single page
@@ -160,7 +205,7 @@ export default async function handler(
   console.log("Request body:", JSON.stringify(req.body, null, 2));
 
   try {
-    const { startUrl, maxPages = 50 } = req.body; // Increased default from 10 to 50
+    const { startUrl, maxPages = 100 } = req.body;
 
     if (!startUrl) {
       console.error("❌ Missing startUrl");
@@ -218,19 +263,18 @@ export default async function handler(
 
     const crawlId = crawlLog?.id || 'unknown';
 
-    // Crawl pages (breadth-first to discover more pages)
-    const visitedUrls = new Set<string>();
-    const urlQueue: string[] = [validatedUrl];
-    const results: CrawlResult[] = [];
-    const errors: string[] = [];
-    const discoveredUrls = new Set<string>([validatedUrl]);
+    // Step 1: Get URLs from sitemap.xml
+    const sitemapUrls = await parseSitemap(validatedUrl);
+    const allUrls = new Set<string>([validatedUrl, ...sitemapUrls]);
+    
+    console.log(`📍 Starting with ${allUrls.size} URLs (1 start + ${sitemapUrls.length} from sitemap)`);
 
-    // First pass: discover all URLs
-    console.log("🔍 Discovery phase: finding all URLs...");
+    // Step 2: Discover more URLs by crawling
+    console.log("🔍 Discovery phase: crawling to find more URLs...");
     const discoveryQueue = [validatedUrl];
     const discoveryVisited = new Set<string>();
     
-    while (discoveryQueue.length > 0 && discoveredUrls.size < maxPages * 2) {
+    while (discoveryQueue.length > 0 && allUrls.size < maxPages * 2) {
       const currentUrl = discoveryQueue.shift()!;
       if (discoveryVisited.has(currentUrl)) continue;
       discoveryVisited.add(currentUrl);
@@ -244,8 +288,8 @@ export default async function handler(
           const html = await response.text();
           const links = extractLinks(html, currentUrl);
           links.forEach(link => {
-            discoveredUrls.add(link);
-            if (!discoveryVisited.has(link) && discoveryQueue.length < 50) {
+            allUrls.add(link);
+            if (!discoveryVisited.has(link) && discoveryQueue.length < 100) {
               discoveryQueue.push(link);
             }
           });
@@ -255,12 +299,15 @@ export default async function handler(
       }
     }
     
-    console.log(`✅ Discovered ${discoveredUrls.size} unique URLs`);
-    
-    // Add all discovered URLs to crawl queue
-    urlQueue.push(...Array.from(discoveredUrls).filter(url => url !== validatedUrl));
+    console.log(`✅ Discovered ${allUrls.size} total unique URLs`);
+    console.log(`📋 All discovered URLs:`, Array.from(allUrls));
 
-    // Second pass: crawl the pages
+    // Step 3: Crawl all discovered pages
+    const urlQueue = Array.from(allUrls);
+    const visitedUrls = new Set<string>();
+    const results: CrawlResult[] = [];
+    const errors: string[] = [];
+
     console.log(`📄 Starting crawl of up to ${maxPages} pages...`);
     while (urlQueue.length > 0 && visitedUrls.size < maxPages) {
       const currentUrl = urlQueue.shift()!;
@@ -268,7 +315,7 @@ export default async function handler(
       if (visitedUrls.has(currentUrl)) continue;
       visitedUrls.add(currentUrl);
       
-      console.log(`📄 Crawling [${visitedUrls.size}/${maxPages}]: ${currentUrl}`);
+      console.log(`📄 Crawling [${visitedUrls.size}/${Math.min(maxPages, allUrls.size)}]: ${currentUrl}`);
       
       const result = await fetchPage(currentUrl);
       results.push(result);
@@ -279,7 +326,8 @@ export default async function handler(
     }
 
     console.log(`\n=== CRAWL RESULTS ===`);
-    console.log(`Pages visited: ${visitedUrls.size}`);
+    console.log(`Pages discovered: ${allUrls.size}`);
+    console.log(`Pages crawled: ${visitedUrls.size}`);
     console.log(`Pages processed: ${results.length}`);
     console.log(`Errors: ${errors.length}`);
 
@@ -396,7 +444,7 @@ export default async function handler(
         .from("crawl_logs")
         .update({
           status: errors.length > 0 ? 'completed_with_errors' : 'completed',
-          pages_found: urlQueue.length + visitedUrls.size,
+          pages_found: allUrls.size,
           pages_crawled: visitedUrls.size,
           pages_new: savedCount,
           pages_updated: updatedCount,
@@ -407,6 +455,8 @@ export default async function handler(
     }
 
     console.log("\n✅ CRAWL COMPLETE!");
+    console.log(`Total discovered: ${allUrls.size}`);
+    console.log(`Total crawled: ${visitedUrls.size}`);
     console.log(`New pages: ${savedCount}`);
     console.log(`Updated pages: ${updatedCount}`);
     console.log(`Errors: ${errors.length}`);
@@ -414,10 +464,12 @@ export default async function handler(
     return res.status(200).json({
       success: true,
       message: `Crawled ${visitedUrls.size} pages successfully`,
+      pagesDiscovered: allUrls.size,
       pagesProcessed: visitedUrls.size,
       knowledgeAdded: savedCount + updatedCount,
       errors: errors.length > 0 ? errors : undefined,
       visitedUrls: Array.from(visitedUrls),
+      allDiscoveredUrls: Array.from(allUrls),
     });
 
   } catch (error: any) {
