@@ -187,9 +187,9 @@ export default function TestingPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics.wordCount}
+                          {response.metrics?.wordCount || 0}
                         </span>
-                        {getRuleStatus(response.metrics.withinWordLimit)}
+                        {getRuleStatus(response.metrics?.withinWordLimit)}
                       </div>
                     </div>
 
@@ -202,9 +202,9 @@ export default function TestingPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics.sentenceCount}
+                          {response.metrics?.sentenceCount || 0}
                         </span>
-                        {getRuleStatus(response.metrics.withinSentenceLimit)}
+                        {getRuleStatus(response.metrics?.sentenceStructure)}
                       </div>
                     </div>
 
@@ -217,9 +217,9 @@ export default function TestingPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics.questionCount}
+                          {response.metrics?.questionsAsked || 0}
                         </span>
-                        {getRuleStatus(response.metrics.oneQuestionOnly)}
+                        {getRuleStatus(response.metrics?.askedQualifyingQuestions)}
                       </div>
                     </div>
 
@@ -232,8 +232,9 @@ export default function TestingPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold dark:text-white">
-                          {response.metrics.paragraphCount}
+                          {response.metrics?.personalizedElements || 0}
                         </span>
+                        {getRuleStatus(response.metrics?.personalized)}
                       </div>
                     </div>
                   </div>
