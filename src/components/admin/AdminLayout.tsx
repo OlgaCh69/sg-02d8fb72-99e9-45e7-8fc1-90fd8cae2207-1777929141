@@ -27,6 +27,7 @@ import {
   TestTube,
   Brain,
   Monitor,
+  FileCheck,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -53,6 +54,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { href: "/admin/knowledge-base", icon: BookOpen, label: "Knowledge Base" },
     { href: "/admin/website-sync", icon: Globe, label: "Website Sync" },
     { href: "/admin/knowledge-sources", icon: FileText, label: "Knowledge Sources" },
+    { href: "/admin/knowledge-coverage", icon: FileCheck, label: "Knowledge Coverage" },
     { href: "/admin/channels", icon: MessageCircle, label: "Channels" },
     { href: "/admin/triggers", icon: Zap, label: "Triggers" },
     { href: "/admin/ai-settings", icon: Brain, label: "AI Settings" },
