@@ -68,7 +68,7 @@ export default function TriggersPage() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (data) setTriggers(data);
+    if (data) setTriggers(data as any[]);
     setLoading(false);
   };
 
