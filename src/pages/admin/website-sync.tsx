@@ -65,6 +65,7 @@ export default function WebsiteSyncPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [crawling, setCrawling] = useState(false);
+  const [crawlProgress, setCrawlProgress] = useState("");
   const [settings, setSettings] = useState<CrawlSettings | null>(null);
   const [pages, setPages] = useState<WebsitePage[]>([]);
   const [logs, setLogs] = useState<CrawlLog[]>([]);
@@ -155,6 +156,7 @@ export default function WebsiteSyncPage() {
   const handleStartCrawl = async () => {
     console.log("=== STARTING CRAWL ===");
     console.log("Form data:", formData);
+    console.log("Website URL:", formData.website_url);
 
     if (!formData.website_url.trim()) {
       toast({
@@ -182,6 +184,7 @@ export default function WebsiteSyncPage() {
     }
 
     setCrawling(true);
+    setCrawlProgress("Starting crawl...");
     
     try {
       const requestBody = { 
@@ -189,7 +192,10 @@ export default function WebsiteSyncPage() {
         maxPages: formData.max_pages || 10
       };
       
-      console.log("📤 Sending request:", requestBody);
+      console.log("📤 Sending request to /api/crawl/start");
+      console.log("📤 Request body:", JSON.stringify(requestBody, null, 2));
+
+      setCrawlProgress("Connecting to website...");
 
       const response = await fetch("/api/crawl/start", {
         method: "POST",
@@ -199,14 +205,36 @@ export default function WebsiteSyncPage() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log("📥 Response status:", response.status);
+      console.log("📥 Response received!");
+      console.log("📥 Status:", response.status);
+      console.log("📥 Status Text:", response.statusText);
 
-      const data = await response.json();
-      console.log("📥 Response data:", data);
+      let data;
+      try {
+        data = await response.json();
+        console.log("📥 Response data:", JSON.stringify(data, null, 2));
+      } catch (jsonError) {
+        console.error("❌ Failed to parse JSON response:", jsonError);
+        const text = await response.text();
+        console.error("Response text:", text);
+        throw new Error("Invalid JSON response from server");
+      }
 
       if (!response.ok) {
+        console.error("❌ Response not OK:", data);
         throw new Error(data.message || data.error || `HTTP ${response.status}`);
       }
+
+      console.log("✅ CRAWL SUCCESS!");
+      console.log(`Pages processed: ${data.pagesProcessed}`);
+      console.log(`Knowledge added: ${data.knowledgeAdded}`);
+      console.log(`URLs visited:`, data.visitedUrls);
+
+      if (data.errors && data.errors.length > 0) {
+        console.warn("⚠️ Errors during crawl:", data.errors);
+      }
+
+      setCrawlProgress(`Complete! Processed ${data.pagesProcessed} pages`);
 
       toast({
         title: "✅ Crawl Complete!",
@@ -214,15 +242,22 @@ export default function WebsiteSyncPage() {
       });
 
       // Reload the page data
-      loadData();
+      setTimeout(() => {
+        loadData();
+        setCrawlProgress("");
+      }, 2000);
       
     } catch (error: any) {
       console.error("=== CRAWL ERROR ===");
-      console.error(error);
+      console.error("Error type:", typeof error);
+      console.error("Error message:", error.message);
+      console.error("Full error:", error);
+      
+      setCrawlProgress(`Failed: ${error.message}`);
       
       toast({
         title: "Crawl Failed",
-        description: error.message || "Failed to crawl website. Check console for details.",
+        description: error.message || "Failed to crawl website. Check browser console (F12) for details.",
         variant: "destructive",
       });
     } finally {
@@ -258,6 +293,12 @@ export default function WebsiteSyncPage() {
           <div>
             <h1 className="text-3xl font-bold">Website Knowledge Sync</h1>
             <p className="text-slate-600">Automatically crawl and learn from your website</p>
+            {crawlProgress && (
+              <p className="text-sm text-indigo-600 font-medium mt-2 flex items-center gap-2">
+                {crawling && <Loader2 className="h-4 w-4 animate-spin" />}
+                {crawlProgress}
+              </p>
+            )}
           </div>
           <Button
             onClick={handleStartCrawl}
