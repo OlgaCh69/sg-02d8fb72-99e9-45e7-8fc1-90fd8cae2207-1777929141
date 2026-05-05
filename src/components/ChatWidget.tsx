@@ -40,6 +40,14 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isTakenOver, setIsTakenOver] = useState(false);
   const [adminName, setAdminName] = useState<string>("");
+  const initialMessages: Message[] = [
+    {
+      id: "welcome-1",
+      role: "assistant",
+      content: "Want to see where AI could help your business capture more leads?",
+      timestamp: new Date(),
+    },
+  ];
 
   useEffect(() => {
     initializeWidget();

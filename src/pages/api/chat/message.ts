@@ -1,9 +1,106 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { supabase } from "@/integrations/supabase/client";
-import { calculateConfidence, shouldAnswerWithConfidence, getLowConfidenceFallback } from "./confidence";
-import { detectSpam, detectPromptInjection, checkRateLimit } from "../security/check-spam";
-import { selectPlaybook } from "../playbooks/execute";
+import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Hard-coded handover keywords
+const HANDOVER_KEYWORDS = [
+  'human', 'person', 'agent', 'support', 'call me', 'speak to someone',
+  'real person', 'team', 'representative', 'talk to someone', 'contact',
+  'phone', 'speak with', 'chat with', 'connect me'
+];
+
+// Intent classification
+async function detectIntent(message: string): Promise<string> {
+  const lowerMsg = message.toLowerCase();
+  
+  // Check for handover first
+  if (HANDOVER_KEYWORDS.some(keyword => lowerMsg.includes(keyword))) {
+    return 'human_handover';
+  }
+  
+  // Pricing
+  if (lowerMsg.match(/\b(price|cost|pricing|how much|payment|fee|rate)\b/)) {
+    return 'pricing_question';
+  }
+  
+  // Demo/booking
+  if (lowerMsg.match(/\b(demo|schedule|book|meeting|call|appointment)\b/)) {
+    return 'demo_request';
+  }
+  
+  // Service inquiry
+  if (lowerMsg.match(/\b(do you|can you|service|automation|whatsapp|instagram|ai|assistant)\b/)) {
+    return 'service_question';
+  }
+  
+  // Support/complaint
+  if (lowerMsg.match(/\b(help|issue|problem|not working|broken|fix)\b/)) {
+    return 'support_question';
+  }
+  
+  // Spam detection
+  if (lowerMsg.match(/\b(buy|sell|crypto|investment|forex|click here|download)\b/) || lowerMsg.length < 3) {
+    return 'spam_or_abuse';
+  }
+  
+  return 'general_question';
+}
+
+// Anti-repetition check
+function isTooSimilar(newResponse: string, recentResponses: string[]): boolean {
+  if (recentResponses.length === 0) return false;
+  
+  const normalizeText = (text: string) => 
+    text.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  
+  const newNormalized = normalizeText(newResponse);
+  const newWords = new Set(newNormalized.split(/\s+/));
+  
+  for (const recent of recentResponses) {
+    const recentNormalized = normalizeText(recent);
+    const recentWords = new Set(recentNormalized.split(/\s+/));
+    
+    // Calculate word overlap
+    const intersection = new Set([...newWords].filter(x => recentWords.has(x)));
+    const similarity = intersection.size / Math.max(newWords.size, recentWords.size);
+    
+    if (similarity > 0.7) return true; // 70% word overlap = too similar
+  }
+  
+  return false;
+}
+
+// Banned repeated phrases
+const BANNED_PHRASES = [
+  'our ai automation services help businesses',
+  'thanks for your message',
+  'would you like to schedule a demo or learn more',
+  'capture more leads, book more appointments, and increase revenue'
+];
+
+function containsBannedPhrase(response: string): boolean {
+  const lowerResponse = response.toLowerCase();
+  return BANNED_PHRASES.some(phrase => lowerResponse.includes(phrase));
+}
+
+// Generate handover response
+function getHandoverResponse(conversationId: string): string {
+  const responses = [
+    "Of course 👍 I can connect you with our team. Would you prefer a quick call or a message?",
+    "Sure thing! I'll get someone from the team to reach out. What's the best way to contact you — phone or email?",
+    "No problem — I can have our team follow up with you directly. What's your preferred contact method?",
+  ];
+  return responses[Math.floor(Math.random() * responses.length)];
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -14,79 +111,45 @@ export default async function handler(
   }
 
   try {
-    const { message, conversationId, visitorId, sessionId, pageUrl, pageTitle } = req.body;
+    const { message, conversationId, visitorId } = req.body;
 
-    if (!message || !conversationId || !visitorId) {
+    if (!message || !conversationId) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // 1. SPAM & ABUSE CHECK
-    const isSpam = detectSpam(message);
-    const isInjection = detectPromptInjection(message);
-    const rateLimitOk = await checkRateLimit(visitorId, "chat_message", 20, 1);
-
-    if (!rateLimitOk) {
-      await supabase.from("abuse_reports").insert({
-        conversation_id: conversationId,
-        abuse_type: "rate_limit",
-        message_content: message,
-        auto_flagged: true,
+    // Detect intent
+    const intent = await detectIntent(message);
+    
+    // Hard-coded handover for human requests
+    if (intent === 'human_handover') {
+      const handoverResponse = getHandoverResponse(conversationId);
+      
+      // Mark conversation as needs follow-up
+      await supabase
+        .from("conversations")
+        .update({ 
+          status: 'needs_follow_up',
+          metadata: { intent: 'human_handover', last_intent_at: new Date().toISOString() }
+        })
+        .eq("id", conversationId);
+      
+      // Save messages
+      await supabase.from("messages").insert([
+        { conversation_id: conversationId, role: "user", content: message },
+        { conversation_id: conversationId, role: "assistant", content: handoverResponse },
+      ]);
+      
+      // Track event
+      await supabase.from("analytics_events").insert({
+        event_name: "handover_requested",
+        visitor_profile_id: visitorId,
+        metadata: { conversation_id: conversationId, message }
       });
-      return res.status(429).json({ 
-        error: "Too many messages. Please slow down.",
-        shouldCaptureLead: true,
-      });
+      
+      return res.status(200).json({ response: handoverResponse, intent: 'human_handover' });
     }
 
-    if (isSpam || isInjection) {
-      await supabase.from("abuse_reports").insert({
-        conversation_id: conversationId,
-        abuse_type: isInjection ? "prompt_injection" : "spam",
-        message_content: message,
-        auto_flagged: true,
-      });
-      return res.status(200).json({ 
-        response: "I'm here to help with genuine questions. Please keep the conversation professional.",
-        shouldCaptureLead: false,
-      });
-    }
-
-    // 2. Get visitor profile
-    const { data: profile } = await supabase
-      .from("visitor_profiles")
-      .select("*")
-      .eq("visitor_id", visitorId)
-      .single();
-
-    if (!profile) {
-      return res.status(404).json({ error: "Profile not found" });
-    }
-
-    // 2.5 Check if conversation is in live takeover mode
-    const { data: conversation } = await supabase
-      .from("conversations")
-      .select("is_live_takeover, taken_over_by")
-      .eq("id", conversationId)
-      .single();
-
-    if (conversation?.is_live_takeover) {
-      // Admin has taken over - don't send AI response
-      return res.status(200).json({
-        response: "",
-        isTakenOver: true,
-        message: "An admin is handling this conversation",
-      });
-    }
-
-    // 3. Save user message
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      role: "user",
-      content: message,
-      metadata: { page_url: pageUrl, page_title: pageTitle },
-    } as any);
-
-    // 4. Get recent messages (last 6 for context)
+    // Get conversation context (last 6 messages only)
     const { data: recentMessages } = await supabase
       .from("messages")
       .select("role, content")
@@ -94,143 +157,20 @@ export default async function handler(
       .order("created_at", { ascending: false })
       .limit(6);
 
-    const last6Messages = recentMessages?.reverse().map(m => `${m.role}: ${m.content}`).join("\n") || "";
+    const context = (recentMessages || []).reverse();
+    const recentAssistantMessages = context
+      .filter(m => m.role === 'assistant')
+      .map(m => m.content)
+      .slice(-3); // Last 3 assistant messages for anti-repetition
 
-    // 5. Get visitor memory (summaries + preferences)
-    let memoryContext = "";
-    let previousSummary = "";
-    if (profile.consent_memory) {
-      const { data: summaries } = await supabase
-        .from("conversation_summaries")
-        .select("summary, intent, service_interest, budget, timeline")
-        .eq("visitor_profile_id", profile.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
+    // Get visitor memory
+    const { data: visitorProfile } = await supabase
+      .from("visitor_profiles")
+      .select("*")
+      .eq("id", visitorId)
+      .single();
 
-      if (summaries && summaries.length > 0) {
-        previousSummary = summaries[0].summary || "";
-        memoryContext = `Previous summary: ${summaries[0].summary}\n`;
-        if (summaries[0].service_interest) memoryContext += `Service interest: ${summaries[0].service_interest}\n`;
-        if (summaries[0].budget) memoryContext += `Budget: ${summaries[0].budget}\n`;
-        if (summaries[0].timeline) memoryContext += `Timeline: ${summaries[0].timeline}\n`;
-      }
-
-      const { data: memory } = await supabase
-        .from("visitor_memory")
-        .select("key, value")
-        .eq("visitor_profile_id", profile.id)
-        .eq("is_active", true);
-
-      if (memory && memory.length > 0) {
-        memoryContext += "\nUser preferences:\n";
-        memory.forEach(m => {
-          memoryContext += `${m.key}: ${m.value}\n`;
-        });
-      }
-    }
-
-    // 6. Search knowledge base
-    const knowledgeResponse = await fetch(`${req.headers.origin || "http://localhost:3000"}/api/knowledge/search`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: message }),
-    });
-    const knowledgeData = await knowledgeResponse.json();
-    const knowledgeChunks = knowledgeData.results || [];
-    let knowledgeContext = "";
-    let sourceType: string | null = null;
-    let sourceUrl: string | null = null;
-
-    if (knowledgeChunks.length > 0) {
-      knowledgeContext = "Relevant knowledge:\n";
-      knowledgeChunks.forEach((chunk: any) => {
-        knowledgeContext += `- ${chunk.content.substring(0, 200)}...\n`;
-        if (!sourceType) {
-          sourceType = chunk.source_type;
-          sourceUrl = chunk.url || chunk.title;
-        }
-      });
-    }
-
-    // 7. Check for playbook match
-    const lowerMessage = message.toLowerCase();
-    let intent = "general_inquiry";
-    if (lowerMessage.includes("price") || lowerMessage.includes("cost")) intent = "pricing_inquiry";
-    if (lowerMessage.includes("quote") || lowerMessage.includes("demo") || lowerMessage.includes("call")) intent = "demo_request";
-    if (lowerMessage.includes("book") || lowerMessage.includes("schedule")) intent = "booking_request";
-    if (lowerMessage.includes("buy") || lowerMessage.includes("purchase")) intent = "purchase_intent";
-    if (lowerMessage.includes("help") || lowerMessage.includes("support") || lowerMessage.includes("problem")) intent = "support_request";
-
-    const playbook = await selectPlaybook(intent);
-    let playbookGuidance = "";
-    if (playbook) {
-      playbookGuidance = `\nFollow this conversation flow: ${JSON.stringify(playbook.flow_steps || [])}\n`;
-      
-      // Create playbook execution
-      await supabase.from("playbook_executions").insert({
-        conversation_id: conversationId,
-        playbook_id: playbook.id,
-        current_step: 0,
-        status: "active",
-      });
-    }
-
-    // 8. GET ACTIVE PROMPT TEMPLATE from Prompt Tuning system
-    const promptResponse = await fetch(`${req.headers.origin || "http://localhost:3000"}/api/prompts/get-active?category=system`);
-    let promptTemplate = "";
-    let temperature = 0.7;
-    let maxTokens = 500;
-    let systemInstructions = "";
-
-    if (promptResponse.ok) {
-      const promptData = await promptResponse.json();
-      promptTemplate = promptData.prompt_content;
-      temperature = promptData.temperature;
-      maxTokens = promptData.max_tokens;
-      systemInstructions = promptData.system_instructions;
-    } else {
-      // Fallback to default prompt if no active template
-      promptTemplate = `You are an AI assistant for a business.
-
-Your goals:
-- Help website visitors clearly and professionally.
-- Answer using approved website knowledge when available.
-- Qualify leads naturally.
-- Capture contact details when useful.
-- Recommend relevant services/products.
-- Avoid making up facts.
-- If unsure, say you are not sure and offer to collect details for human follow-up.
-- Keep answers concise, friendly, and conversion-focused.
-
-Page URL: {{page_url}}
-Page title: {{page_title}}
-Lead score: {{lead_score}}
-Lead status: {{lead_status}}
-
-USER MEMORY:
-{{user_memory}}
-
-RECENT CHAT:
-{{recent_messages}}
-
-RELEVANT KNOWLEDGE:
-{{knowledge_chunks}}
-
-CURRENT USER MESSAGE:
-{{user_message}}`;
-    }
-
-    // 9. Replace template variables
-    let processedPrompt = promptTemplate;
-    processedPrompt = processedPrompt.replace(/\{\{page_url\}\}/g, pageUrl || "unknown");
-    processedPrompt = processedPrompt.replace(/\{\{page_title\}\}/g, pageTitle || "unknown");
-    processedPrompt = processedPrompt.replace(/\{\{visitor_name\}\}/g, profile.name || "");
-    processedPrompt = processedPrompt.replace(/\{\{lead_score\}\}/g, String(profile.lead_score || 0));
-    processedPrompt = processedPrompt.replace(/\{\{lead_status\}\}/g, profile.lead_status || "UNKNOWN");
-    processedPrompt = processedPrompt.replace(/\{\{user_memory\}\}/g, memoryContext);
-    processedPrompt = processedPrompt.replace(/\{\{recent_messages\}\}/g, last6Messages);
-    processedPrompt = processedPrompt.replace(/\{\{knowledge_chunks\}\}/g, knowledgeContext);
-    processedPrompt = processedPrompt.replace(/\{\{user_message\}\}/g, message);
+    const visitorContext = visitorProfile?.profile_data || {};
 
     // Load AI configuration
     const { data: aiConfig } = await supabase
@@ -239,151 +179,145 @@ CURRENT USER MESSAGE:
       .eq("is_active", true)
       .single();
 
-    const systemPrompt = aiConfig?.system_prompt || 
-      'You are a helpful AI assistant for a business. Answer questions professionally and concisely.';
-    
-    const customInstructions = aiConfig?.custom_instructions || '';
-    const fullSystemPrompt = `${systemPrompt}\n\n${customInstructions}`.trim();
+    // Enhanced system prompt
+    const systemPrompt = `You are a human-like AI assistant for O.N.E.Tech Automation.
 
-    // Call OpenAI
-    const openai = new OpenAI();
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: fullSystemPrompt,
-        },
-        ...(recentMessages || []).map((msg: any) => ({
-          role: (msg.role === "user" ? "user" : "assistant") as "user" | "assistant",
-          content: String(msg.content),
-        })),
-        { role: "user", content: message },
-      ],
-      temperature: aiConfig?.temperature || 0.7,
-      max_tokens: aiConfig?.max_tokens || 200,
-    });
+CORE RULES:
+- Answer the visitor's exact question first
+- Sound natural, not corporate
+- Use short conversational replies (40-90 words, max 120)
+- Ask only ONE question at a time
+- Never ignore what the user asked
+- Avoid generic sales pitches
+- Use contractions: "we'll", "it's", "you're"
+- Respond like a helpful team member, not a brochure
 
-    const aiResponse = completion.choices[0]?.message?.content || "";
+RESPONSE STRUCTURE:
+1. Acknowledge naturally
+2. Answer directly
+3. Add one useful detail (if needed)
+4. Ask one relevant next question
 
-    // 11. Calculate confidence score
-    const confidence = calculateConfidence({
-      knowledgeMatches: knowledgeChunks.length,
-      hasExactMatch: knowledgeChunks.length > 0,
-      sourceType: sourceType || null,
-      answerLength: aiResponse.length,
-    });
+NEVER REPEAT:
+- "Our AI automation services help businesses"
+- "Thanks for your message"
+- "capture more leads, book more appointments, and increase revenue"
+- Long company descriptions
+- Same opening lines
 
-    const shouldAnswer = shouldAnswerWithConfidence(confidence);
-    const finalResponse = shouldAnswer ? aiResponse : getLowConfidenceFallback();
+LEAD CAPTURE:
+Only ask for contact info when:
+- User asks about pricing
+- User wants a demo
+- User describes their problem
+- User shows buying intent
 
-    // 12. Save assistant message
-    const { data: assistantMsg } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      role: "assistant",
-      content: finalResponse,
-      metadata: { 
-        source_type: sourceType, 
-        source_url: sourceUrl,
-        confidence: confidence,
-        intent: intent,
-        temperature: temperature,
-        max_tokens: maxTokens,
-      },
-    } as any).select().single();
+DO NOT:
+- Jump straight to demo booking
+- Ask for email/phone too early
+- Give long paragraphs
+- Copy website text word-for-word
+- Repeat previous answers
 
-    // 13. Save answer confidence for quality control
-    if (assistantMsg) {
-      await supabase.from("message_confidence").insert({
-        message_id: assistantMsg.id,
-        confidence_score: confidence,
-        source_type: sourceType,
-        source_url: sourceUrl,
-        knowledge_match_count: knowledgeChunks.length,
+VISITOR CONTEXT:
+${visitorContext.business_type ? `Business type: ${visitorContext.business_type}` : ''}
+${visitorContext.interest ? `Interest: ${visitorContext.interest}` : ''}
+
+CONVERSATION INTENT: ${intent}
+
+${aiConfig?.custom_instructions || ''}`;
+
+    // Search knowledge base for relevant info
+    const { data: knowledgeResults } = await supabase
+      .from("knowledge_sources")
+      .select("title, content, url")
+      .eq("approved", true)
+      .limit(3);
+
+    let knowledgeContext = '';
+    if (knowledgeResults && knowledgeResults.length > 0) {
+      knowledgeContext = '\n\nRELEVANT COMPANY INFO (use naturally, do not copy):\n' + 
+        knowledgeResults.map(k => `- ${k.title}: ${k.content.substring(0, 200)}`).join('\n');
+    }
+
+    // Generate response with retry for anti-repetition
+    let aiResponse = '';
+    let attempts = 0;
+    const maxAttempts = 2;
+
+    while (attempts < maxAttempts) {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt + knowledgeContext,
+          },
+          ...context.map((msg: any) => ({
+            role: (msg.role === "user" ? "user" : "assistant") as "user" | "assistant",
+            content: String(msg.content),
+          })),
+          { role: "user", content: message },
+        ],
+        temperature: aiConfig?.temperature || 0.7,
+        max_tokens: aiConfig?.max_tokens || 150,
       });
-    }
 
-    // 14. Update lead score
-    let scoreChange = 0;
-    if (intent === "pricing_inquiry") scoreChange += 20;
-    if (intent === "demo_request" || intent === "booking_request") scoreChange += 30;
-    if (intent === "purchase_intent") scoreChange += 30;
-    if (profile.email || profile.phone) scoreChange += 25;
+      aiResponse = completion.choices[0]?.message?.content || "";
 
-    if (scoreChange > 0) {
-      const oldScore = profile.lead_score || 0;
-      const newScore = oldScore + scoreChange;
+      // Check for repetition and banned phrases
+      if (!isTooSimilar(aiResponse, recentAssistantMessages) && !containsBannedPhrase(aiResponse)) {
+        break; // Good response
+      }
+
+      attempts++;
       
-      const oldStatus = profile.lead_status || "UNKNOWN";
-      let newStatus: "HOT" | "WARM" | "COLD" | "UNKNOWN" = "UNKNOWN";
-      if (newScore >= 70) newStatus = "HOT";
-      else if (newScore >= 35) newStatus = "WARM";
-      else if (newScore > 0) newStatus = "COLD";
-
-      await supabase
-        .from("visitor_profiles")
-        .update({ lead_score: newScore, lead_status: newStatus })
-        .eq("id", profile.id);
-
-      // Track score history
-      if (oldStatus !== newStatus || scoreChange > 0) {
-        await supabase.from("lead_score_history").insert({
-          visitor_profile_id: profile.id,
-          old_score: oldScore,
-          new_score: newScore,
-          old_status: oldStatus,
-          new_status: newStatus,
-          reason: `Message interaction: ${intent}`,
-        });
-      }
-
-      // Notify admin if HOT lead
-      if (newStatus === "HOT" && oldStatus !== "HOT") {
-        await fetch(`${req.headers.origin || "http://localhost:3000"}/api/notifications/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            notificationType: "hot_lead",
-            visitorProfileId: profile.id,
-            conversationId: conversationId,
-            title: "🔥 New HOT Lead!",
-            message: `${profile.name || profile.email || "Visitor"} - Score: ${newScore} - Page: ${pageUrl}`,
-            metadata: { lead_score: newScore, intent },
-          }),
+      if (attempts < maxAttempts) {
+        // Add instruction to regenerate differently
+        context.push({
+          role: 'system',
+          content: 'IMPORTANT: Your last response was too similar to previous messages. Rephrase completely with different wording and structure.'
         });
       }
     }
 
-    // 15. Trigger memory extraction in background
-    fetch(`${req.headers.origin || "http://localhost:3000"}/api/memory/extract`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        conversationId,
-        visitorProfileId: profile.id,
-        recentMessages: recentMessages?.slice(-10),
-      }),
-    }).catch(err => console.error("Memory extraction failed:", err));
+    // Fallback if still repetitive
+    if (!aiResponse || aiResponse.trim().length < 10) {
+      aiResponse = "Just to make sure I help properly — are you looking for automation for leads, bookings, customer support, or missed calls?";
+    }
 
-    // 16. Determine if we should capture lead
-    const shouldCaptureLead = 
-      !profile.email && 
-      (intent === "demo_request" || intent === "pricing_inquiry" || intent === "booking_request") &&
-      !shouldAnswer; // Low confidence = ask for contact
+    // Save messages
+    await supabase.from("messages").insert([
+      { conversation_id: conversationId, role: "user", content: message },
+      { conversation_id: conversationId, role: "assistant", content: aiResponse },
+    ]);
 
-    return res.status(200).json({
-      response: finalResponse,
-      sourceType,
-      sourceUrl,
-      confidence,
-      shouldCaptureLead,
-      intent,
+    // Update conversation with intent
+    await supabase
+      .from("conversations")
+      .update({ 
+        metadata: { ...visitorContext, last_intent: intent, last_message_at: new Date().toISOString() }
+      })
+      .eq("id", conversationId);
+
+    // Track message event
+    await supabase.from("analytics_events").insert({
+      event_name: "message_sent",
+      visitor_profile_id: visitorId,
+      metadata: { conversation_id: conversationId, intent }
     });
+
+    return res.status(200).json({ 
+      response: aiResponse,
+      intent,
+      conversationId 
+    });
+
   } catch (error) {
-    console.error("Chat message error:", error);
+    console.error("Chat error:", error);
     return res.status(500).json({ 
-      error: "internal_server_error",
-      response: "Sorry, I'm having trouble right now. Please try again.",
+      error: "Failed to process message",
+      response: "I'm having trouble connecting right now. Can you try again in a moment?"
     });
   }
 }
