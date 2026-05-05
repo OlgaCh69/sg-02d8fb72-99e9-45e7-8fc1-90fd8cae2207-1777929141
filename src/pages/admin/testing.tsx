@@ -29,6 +29,8 @@ export default function TestingPage() {
 
     setLoading(true);
     setResponse(null);
+    console.log("🧪 TEST: Starting test with message:", message);
+    
     try {
       const res = await fetch("/api/test/demo-conversation", {
         method: "POST",
@@ -36,23 +38,34 @@ export default function TestingPage() {
         body: JSON.stringify({ userMessage: message, sessionId: `test_${Date.now()}` }),
       });
 
+      console.log("🧪 TEST: Response status:", res.status);
+
       if (!res.ok) {
         const error = await res.json();
+        console.error("🧪 TEST: API error:", error);
         throw new Error(error.message || "Test failed");
       }
 
       const data = await res.json();
+      console.log("🧪 TEST: Raw API response:", data);
       
       // Analyze the AI response if backend didn't provide metrics
       const aiText = data.response || data.aiResponse || data.message || "";
-      const metrics = data.metrics || analyzeResponse(aiText);
+      console.log("🧪 TEST: AI text to analyze:", aiText);
+      console.log("🧪 TEST: AI text length:", aiText.length);
       
-      setResponse({
+      const metrics = data.metrics || analyzeResponse(aiText);
+      console.log("🧪 TEST: Calculated metrics:", metrics);
+      
+      const responseObj = {
         ...data,
         aiResponse: aiText,
         metrics,
         passesRules: data.passesRules ?? (metrics.withinWordLimit && metrics.sentenceStructure && metrics.askedQualifyingQuestions)
-      });
+      };
+      console.log("🧪 TEST: Final response object:", responseObj);
+      
+      setResponse(responseObj);
       setHistory(data.messageHistory || []);
       setMessage("");
 
@@ -61,7 +74,7 @@ export default function TestingPage() {
         description: "Response analyzed successfully",
       });
     } catch (error: any) {
-      console.error("Test error:", error);
+      console.error("🧪 TEST: Error:", error);
       toast({
         title: "Test Failed",
         description: error.message || "Failed to process test message",

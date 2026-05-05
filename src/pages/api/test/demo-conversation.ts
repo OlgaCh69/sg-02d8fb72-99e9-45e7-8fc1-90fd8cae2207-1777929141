@@ -9,12 +9,15 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log("🧪 API: Demo conversation endpoint called");
+  
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     const { userMessage, pageUrl = "/", resetConversation = false } = req.body;
+    console.log("🧪 API: Request body:", { userMessage, pageUrl, resetConversation });
 
     if (!userMessage) {
       return res.status(400).json({ error: "Missing userMessage" });
@@ -23,6 +26,7 @@ export default async function handler(
     // Use test visitor ID
     const testVisitorId = "test_visitor_demo";
     const testSessionId = `test_session_${Date.now()}`;
+    console.log("🧪 API: Using test visitor:", testVisitorId);
 
     // Get or create test visitor profile
     let { data: profile } = await supabase
@@ -30,6 +34,8 @@ export default async function handler(
       .select("*")
       .eq("visitor_id", testVisitorId)
       .single();
+
+    console.log("🧪 API: Existing profile:", profile ? "found" : "not found");
 
     if (!profile || resetConversation) {
       // Create fresh test profile
@@ -48,6 +54,7 @@ export default async function handler(
         .single();
       
       profile = newProfile;
+      console.log("🧪 API: Created new profile");
     }
 
     // Get or create test conversation
@@ -59,6 +66,8 @@ export default async function handler(
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    console.log("🧪 API: Existing conversation:", conversation ? "found" : "not found");
 
     if (!conversation || resetConversation) {
       const { data: newConversation } = await supabase
@@ -75,9 +84,11 @@ export default async function handler(
         .single();
       
       conversation = newConversation;
+      console.log("🧪 API: Created new conversation");
     }
 
     // Call the chat message API
+    console.log("🧪 API: Calling chat/message API...");
     const chatResponse = await fetch(`${req.headers.origin || "http://localhost:3000"}/api/chat/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -91,7 +102,9 @@ export default async function handler(
       }),
     });
 
+    console.log("🧪 API: Chat API response status:", chatResponse.status);
     const chatData = await chatResponse.json();
+    console.log("🧪 API: Chat API response data:", chatData);
 
     // Get conversation messages
     const { data: messages } = await supabase
@@ -100,11 +113,16 @@ export default async function handler(
       .eq("conversation_id", conversation!.id)
       .order("timestamp", { ascending: true });
 
+    console.log("🧪 API: Retrieved messages:", messages?.length || 0);
+
     // Calculate response metrics
     const aiResponse = chatData.response || "";
+    console.log("🧪 API: AI response text:", aiResponse);
+    console.log("🧪 API: AI response length:", aiResponse.length);
+    
     const wordCount = aiResponse.split(/\s+/).length;
     const sentenceCount = (aiResponse.match(/[.!?]+/g) || []).length;
-    const paragraphCount = aiResponse.split(/\n\n/).filter(p => p.trim()).length;
+    const paragraphCount = aiResponse.split(/\n\n/).filter((p: string) => p.trim()).length;
     const questionCount = (aiResponse.match(/\?/g) || []).length;
 
     const metrics = {
@@ -117,20 +135,26 @@ export default async function handler(
       oneQuestionOnly: questionCount <= 1,
     };
 
-    return res.status(200).json({
+    console.log("🧪 API: Calculated metrics:", metrics);
+
+    const responseData = {
       userMessage,
       aiResponse,
       metrics,
       conversationId: conversation!.id,
-      messageHistory: messages?.map(m => ({
+      messageHistory: messages?.map((m: any) => ({
         role: m.role,
         content: m.content,
         type: m.message_type,
       })),
       passesRules: metrics.withinWordLimit && metrics.withinSentenceLimit && metrics.oneQuestionOnly,
-    });
+    };
+
+    console.log("🧪 API: Sending response:", responseData);
+
+    return res.status(200).json(responseData);
   } catch (error) {
-    console.error("Demo conversation error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("🧪 API: Demo conversation error:", error);
+    return res.status(500).json({ error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" });
   }
 }
