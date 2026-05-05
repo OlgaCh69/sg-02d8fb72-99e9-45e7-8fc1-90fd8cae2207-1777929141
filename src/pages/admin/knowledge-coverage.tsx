@@ -172,16 +172,23 @@ export default function KnowledgeCoveragePage() {
 
   const handleToggleApproval = async (pageId: string, currentStatus: boolean) => {
     try {
+      console.log(`🔄 Toggling approval for page ${pageId} from ${currentStatus} to ${!currentStatus}`);
+      
       const { error } = await supabase
         .from("website_pages")
         .update({ approved: !currentStatus, updated_at: new Date().toISOString() })
         .eq("id", pageId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Approval toggle error:", error);
+        throw error;
+      }
+
+      console.log("✅ Approval toggled successfully");
 
       toast({
         title: "Success",
-        description: currentStatus ? "Page unapproved" : "Page approved",
+        description: currentStatus ? "Page unapproved" : "Page approved for AI use",
       });
 
       loadData();
@@ -189,7 +196,7 @@ export default function KnowledgeCoveragePage() {
       console.error("Error toggling approval:", error);
       toast({
         title: "Error",
-        description: "Failed to update approval status",
+        description: "Failed to update approval status. Check console for details.",
         variant: "destructive",
       });
     }
@@ -288,17 +295,24 @@ export default function KnowledgeCoveragePage() {
 
   const handleApproveAll = async () => {
     try {
+      console.log("🔄 Approving all indexed pages...");
+      
       const { error } = await supabase
         .from("website_pages")
         .update({ approved: true, updated_at: new Date().toISOString() })
         .eq("status", "indexed")
         .eq("approved", false);
 
-      if (error) throw error;
+      if (error) {
+        console.error("❌ Approve all error:", error);
+        throw error;
+      }
+
+      console.log("✅ All pages approved successfully");
 
       toast({
         title: "Success",
-        description: "All indexed pages approved",
+        description: "All indexed pages approved for AI use",
       });
 
       loadData();
@@ -306,7 +320,7 @@ export default function KnowledgeCoveragePage() {
       console.error("Error approving all:", error);
       toast({
         title: "Error",
-        description: "Failed to approve all pages",
+        description: "Failed to approve all pages. Check console for details.",
         variant: "destructive",
       });
     }

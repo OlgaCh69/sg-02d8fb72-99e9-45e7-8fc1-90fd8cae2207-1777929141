@@ -53,9 +53,19 @@ function extractLinks(html: string, baseUrl: string): string[] {
       
       // Only internal links from same domain
       if (absoluteUrl.hostname === baseDomain) {
-        // Remove hash and query params
+        // Remove hash and query params for cleaner URLs
         const cleanUrl = `${absoluteUrl.origin}${absoluteUrl.pathname}`;
-        if (cleanUrl !== baseUrl) {
+        
+        // Skip common non-content URLs
+        const skipPatterns = [
+          '/wp-admin', '/wp-login', '/admin/', '/login',
+          '.pdf', '.jpg', '.png', '.gif', '.zip', '.xml',
+          '/feed', '/rss', '/sitemap'
+        ];
+        
+        const shouldSkip = skipPatterns.some(pattern => cleanUrl.includes(pattern));
+        
+        if (!shouldSkip && cleanUrl !== baseUrl) {
           links.add(cleanUrl);
         }
       }
@@ -150,7 +160,7 @@ export default async function handler(
   console.log("Request body:", JSON.stringify(req.body, null, 2));
 
   try {
-    const { startUrl, maxPages = 10 } = req.body;
+    const { startUrl, maxPages = 50 } = req.body; // Increased default from 10 to 50
 
     if (!startUrl) {
       console.error("❌ Missing startUrl");
@@ -208,12 +218,50 @@ export default async function handler(
 
     const crawlId = crawlLog?.id || 'unknown';
 
-    // Crawl pages
+    // Crawl pages (breadth-first to discover more pages)
     const visitedUrls = new Set<string>();
     const urlQueue: string[] = [validatedUrl];
     const results: CrawlResult[] = [];
     const errors: string[] = [];
+    const discoveredUrls = new Set<string>([validatedUrl]);
 
+    // First pass: discover all URLs
+    console.log("🔍 Discovery phase: finding all URLs...");
+    const discoveryQueue = [validatedUrl];
+    const discoveryVisited = new Set<string>();
+    
+    while (discoveryQueue.length > 0 && discoveredUrls.size < maxPages * 2) {
+      const currentUrl = discoveryQueue.shift()!;
+      if (discoveryVisited.has(currentUrl)) continue;
+      discoveryVisited.add(currentUrl);
+      
+      try {
+        const response = await fetch(currentUrl, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; O.N.E.Tech-Bot/1.0)' },
+        });
+        
+        if (response.ok) {
+          const html = await response.text();
+          const links = extractLinks(html, currentUrl);
+          links.forEach(link => {
+            discoveredUrls.add(link);
+            if (!discoveryVisited.has(link) && discoveryQueue.length < 50) {
+              discoveryQueue.push(link);
+            }
+          });
+        }
+      } catch (e) {
+        // Skip failed discovery
+      }
+    }
+    
+    console.log(`✅ Discovered ${discoveredUrls.size} unique URLs`);
+    
+    // Add all discovered URLs to crawl queue
+    urlQueue.push(...Array.from(discoveredUrls).filter(url => url !== validatedUrl));
+
+    // Second pass: crawl the pages
+    console.log(`📄 Starting crawl of up to ${maxPages} pages...`);
     while (urlQueue.length > 0 && visitedUrls.size < maxPages) {
       const currentUrl = urlQueue.shift()!;
       
@@ -227,13 +275,6 @@ export default async function handler(
       
       if (result.error) {
         errors.push(`${currentUrl}: ${result.error}`);
-      } else {
-        // Add discovered links to queue
-        for (const link of result.links) {
-          if (!visitedUrls.has(link) && urlQueue.length + visitedUrls.size < maxPages) {
-            urlQueue.push(link);
-          }
-        }
       }
     }
 
