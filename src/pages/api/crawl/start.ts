@@ -132,7 +132,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // Log IMMEDIATELY at function entry
+  console.log("\n\n========================================");
+  console.log("🚨 CRAWL API HANDLER CALLED");
+  console.log("Time:", new Date().toISOString());
+  console.log("Method:", req.method);
+  console.log("Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("Body:", JSON.stringify(req.body, null, 2));
+  console.log("========================================\n");
+
   if (req.method !== "POST") {
+    console.error("❌ Method not allowed:", req.method);
     return res.status(405).json({ error: "Method not allowed" });
   }
 
