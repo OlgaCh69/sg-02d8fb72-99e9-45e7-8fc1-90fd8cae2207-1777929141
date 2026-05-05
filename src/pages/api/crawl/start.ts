@@ -59,8 +59,7 @@ function extractLinks(html: string, baseUrl: string): string[] {
         // Skip common non-content URLs
         const skipPatterns = [
           '/wp-admin', '/wp-login', '/admin/', '/login',
-          '.pdf', '.jpg', '.png', '.gif', '.zip', '.xml',
-          '/feed', '/rss'
+          '.pdf', '.jpg', '.png', '.gif', '.zip', '.xml'
         ];
         
         const shouldSkip = skipPatterns.some(pattern => cleanUrl.includes(pattern));
@@ -274,10 +273,22 @@ export default async function handler(
     const discoveryQueue = [validatedUrl];
     const discoveryVisited = new Set<string>();
     
+    // Prioritize blog and article pages for discovery
+    const blogPages = Array.from(allUrls).filter(url => 
+      url.includes('/blog') || url.includes('/article') || url.includes('/post')
+    );
+    blogPages.forEach(url => {
+      if (!discoveryQueue.includes(url)) {
+        discoveryQueue.unshift(url); // Add to front of queue
+      }
+    });
+    
     while (discoveryQueue.length > 0 && allUrls.size < maxPages * 2) {
       const currentUrl = discoveryQueue.shift()!;
       if (discoveryVisited.has(currentUrl)) continue;
       discoveryVisited.add(currentUrl);
+      
+      console.log(`🔍 Discovering from: ${currentUrl}`);
       
       try {
         const response = await fetch(currentUrl, {
@@ -287,15 +298,28 @@ export default async function handler(
         if (response.ok) {
           const html = await response.text();
           const links = extractLinks(html, currentUrl);
+          
+          console.log(`   Found ${links.length} links on this page`);
+          
           links.forEach(link => {
-            allUrls.add(link);
-            if (!discoveryVisited.has(link) && discoveryQueue.length < 100) {
-              discoveryQueue.push(link);
+            if (!allUrls.has(link)) {
+              allUrls.add(link);
+              console.log(`   ✨ New URL discovered: ${link}`);
+            }
+            
+            // Add blog/article pages to discovery queue with priority
+            const isBlogRelated = link.includes('/blog') || link.includes('/article') || link.includes('/post');
+            if (!discoveryVisited.has(link)) {
+              if (isBlogRelated && discoveryQueue.length < 200) {
+                discoveryQueue.unshift(link); // Priority for blog pages
+              } else if (discoveryQueue.length < 200) {
+                discoveryQueue.push(link);
+              }
             }
           });
         }
       } catch (e) {
-        // Skip failed discovery
+        console.log(`   ⚠️ Failed to discover from ${currentUrl}`);
       }
     }
     
