@@ -160,6 +160,22 @@ export default async function handler(
 
     console.log(`🚀 Starting crawl of ${validatedUrl} (max ${maxPages} pages)`);
 
+    // Test database connection first
+    console.log("🔌 Testing database connection...");
+    const { data: testData, error: testError } = await supabase
+      .from("website_pages")
+      .select("id")
+      .limit(1);
+    
+    if (testError) {
+      console.error("❌ Database connection failed:", testError);
+      return res.status(500).json({ 
+        error: "Database connection failed", 
+        details: testError.message 
+      });
+    }
+    console.log("✅ Database connected successfully");
+
     // Create crawl log entry
     const { data: crawlLog, error: logError } = await supabase
       .from("crawl_logs")

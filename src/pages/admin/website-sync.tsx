@@ -208,16 +208,19 @@ export default function WebsiteSyncPage() {
       console.log("📥 Response received!");
       console.log("📥 Status:", response.status);
       console.log("📥 Status Text:", response.statusText);
+      console.log("📥 Headers:", Object.fromEntries(response.headers.entries()));
 
       let data;
+      const responseText = await response.text();
+      console.log("📥 Raw response:", responseText);
+
       try {
-        data = await response.json();
-        console.log("📥 Response data:", JSON.stringify(data, null, 2));
+        data = JSON.parse(responseText);
+        console.log("📥 Parsed data:", JSON.stringify(data, null, 2));
       } catch (jsonError) {
-        console.error("❌ Failed to parse JSON response:", jsonError);
-        const text = await response.text();
-        console.error("Response text:", text);
-        throw new Error("Invalid JSON response from server");
+        console.error("❌ Failed to parse JSON:", jsonError);
+        console.error("Response text was:", responseText);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
       }
 
       if (!response.ok) {
@@ -241,8 +244,10 @@ export default function WebsiteSyncPage() {
         description: `Successfully crawled ${data.pagesProcessed || 0} pages and added ${data.knowledgeAdded || 0} knowledge entries`,
       });
 
-      // Reload the page data
+      // Reload data with delay
+      console.log("🔄 Reloading page data in 2 seconds...");
       setTimeout(() => {
+        console.log("🔄 Loading data now...");
         loadData();
         setCrawlProgress("");
       }, 2000);
@@ -250,14 +255,16 @@ export default function WebsiteSyncPage() {
     } catch (error: any) {
       console.error("=== CRAWL ERROR ===");
       console.error("Error type:", typeof error);
+      console.error("Error name:", error.name);
       console.error("Error message:", error.message);
-      console.error("Full error:", error);
+      console.error("Error stack:", error.stack);
+      console.error("Full error object:", JSON.stringify(error, null, 2));
       
       setCrawlProgress(`Failed: ${error.message}`);
       
       toast({
-        title: "Crawl Failed",
-        description: error.message || "Failed to crawl website. Check browser console (F12) for details.",
+        title: "❌ Crawl Failed",
+        description: error.message || "Check browser console (F12) for detailed error logs",
         variant: "destructive",
       });
     } finally {
