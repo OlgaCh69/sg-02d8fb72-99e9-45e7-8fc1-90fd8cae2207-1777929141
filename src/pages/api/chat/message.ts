@@ -255,8 +255,8 @@ CURRENT USER MESSAGE:
           content: fullSystemPrompt,
         },
         ...(recentMessages || []).map((msg: any) => ({
-          role: msg.role === "user" ? "user" : "assistant",
-          content: msg.content,
+          role: (msg.role === "user" ? "user" : "assistant") as "user" | "assistant",
+          content: String(msg.content),
         })),
         { role: "user", content: message },
       ],
