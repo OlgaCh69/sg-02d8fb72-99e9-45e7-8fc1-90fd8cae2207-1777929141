@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { AdminLayout } from "@/components/admin/AdminLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,13 +58,13 @@ type WebsitePage = {
 
 type CrawlLog = {
   id: string;
-  crawl_type: string;
+  crawl_id: string;
   status: string;
-  pages_discovered: number;
+  pages_found: number;
   pages_crawled: number;
-  pages_indexed: number;
-  pages_failed: number;
-  message: string | null;
+  pages_new: number;
+  pages_updated: number;
+  errors: string[] | null;
   started_at: string;
   completed_at: string | null;
 };
@@ -463,16 +463,16 @@ export default function KnowledgeCoveragePage() {
                 </div>
                 <div className="flex items-center gap-6 text-sm">
                   <div>
-                    <span className="text-slate-600">Discovered:</span> <span className="font-semibold">{lastCrawl.pages_discovered}</span>
+                    <span className="text-slate-600">Discovered:</span> <span className="font-semibold">{lastCrawl.pages_found || 0}</span>
                   </div>
                   <div>
-                    <span className="text-slate-600">Crawled:</span> <span className="font-semibold">{lastCrawl.pages_crawled}</span>
+                    <span className="text-slate-600">Crawled:</span> <span className="font-semibold">{lastCrawl.pages_crawled || 0}</span>
                   </div>
                   <div>
-                    <span className="text-slate-600">Indexed:</span> <span className="font-semibold">{lastCrawl.pages_indexed}</span>
+                    <span className="text-slate-600">Indexed:</span> <span className="font-semibold">{(lastCrawl.pages_new || 0) + (lastCrawl.pages_updated || 0)}</span>
                   </div>
                   <div>
-                    <span className="text-slate-600">Failed:</span> <span className="font-semibold text-red-600">{lastCrawl.pages_failed}</span>
+                    <span className="text-slate-600">Failed:</span> <span className="font-semibold text-red-600">{lastCrawl.errors?.length || 0}</span>
                   </div>
                 </div>
               </div>
@@ -714,7 +714,7 @@ export default function KnowledgeCoveragePage() {
                       {logs.map((log) => (
                         <tr key={log.id} className="hover:bg-slate-50">
                           <td className="px-4 py-3">
-                            <Badge variant="outline">{log.crawl_type}</Badge>
+                            <Badge variant="outline">Website Crawl</Badge>
                           </td>
                           <td className="px-4 py-3">
                             {log.status === "completed" && (
@@ -729,11 +729,11 @@ export default function KnowledgeCoveragePage() {
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <div className="flex items-center gap-4">
-                              <span>{log.pages_discovered} discovered</span>
-                              <span>{log.pages_crawled} crawled</span>
-                              <span>{log.pages_indexed} indexed</span>
-                              {log.pages_failed > 0 && (
-                                <span className="text-red-600">{log.pages_failed} failed</span>
+                              <span>{log.pages_found || 0} discovered</span>
+                              <span>{log.pages_crawled || 0} crawled</span>
+                              <span>{(log.pages_new || 0) + (log.pages_updated || 0)} indexed</span>
+                              {(log.errors?.length || 0) > 0 && (
+                                <span className="text-red-600">{log.errors?.length || 0} failed</span>
                               )}
                             </div>
                           </td>
