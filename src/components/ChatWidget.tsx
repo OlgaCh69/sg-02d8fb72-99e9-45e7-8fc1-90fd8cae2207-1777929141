@@ -45,7 +45,13 @@ export function ChatWidget({ apiUrl }: ChatWidgetProps) {
       id: "welcome-1",
       role: "assistant",
       content: "Want to see where AI could help your business capture more leads?",
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
+      source_type: null,
+      source_url: null,
+      metadata: {},
+      message_type: "system",
+      sent_by_admin: null,
+      conversation_id: "temp",
     },
   ];
 
