@@ -140,11 +140,13 @@ export default async function handler(
       ]);
       
       // Track event
-      await supabase.from("analytics_events").insert({
-        event_name: "handover_requested",
-        visitor_profile_id: visitorId,
-        metadata: { conversation_id: conversationId, message }
-      });
+      if (visitorId) {
+        await supabase.from("analytics_events").insert({
+          event_name: "handover_requested",
+          visitor_profile_id: visitorId,
+          metadata: { conversation_id: conversationId, message }
+        });
+      }
       
       return res.status(200).json({ response: handoverResponse, intent: 'human_handover' });
     }
@@ -164,13 +166,16 @@ export default async function handler(
       .slice(-3); // Last 3 assistant messages for anti-repetition
 
     // Get visitor memory
-    const { data: visitorProfile } = await supabase
-      .from("visitor_profiles")
-      .select("*")
-      .eq("id", visitorId)
-      .single();
+    let visitorContext = {};
+    if (visitorId) {
+      const { data: visitorProfile } = await supabase
+        .from("visitor_profiles")
+        .select("*")
+        .eq("id", visitorId)
+        .single();
 
-    const visitorContext = visitorProfile?.profile_data || {};
+      visitorContext = visitorProfile?.profile_data || {};
+    }
 
     // Load AI configuration
     const { data: aiConfig } = await supabase
@@ -301,11 +306,13 @@ ${aiConfig?.custom_instructions || ''}`;
       .eq("id", conversationId);
 
     // Track message event
-    await supabase.from("analytics_events").insert({
-      event_name: "message_sent",
-      visitor_profile_id: visitorId,
-      metadata: { conversation_id: conversationId, intent }
-    });
+    if (visitorId) {
+      await supabase.from("analytics_events").insert({
+        event_name: "message_sent",
+        visitor_profile_id: visitorId,
+        metadata: { conversation_id: conversationId, intent }
+      });
+    }
 
     return res.status(200).json({ 
       response: aiResponse,
