@@ -89,13 +89,18 @@ export default async function handler(
 
     // Call the chat message API
     console.log("🧪 API: Calling chat/message API...");
-    const chatResponse = await fetch(`${req.headers.origin || "http://localhost:3000"}/api/chat/message`, {
+    // Force localhost for server-to-server calls to avoid DNS/firewall issues in preview
+    const baseUrl = "http://localhost:3000";
+    
+    console.log("🧪 API: Chat API URL:", `${baseUrl}/api/chat/message`);
+    
+    const chatResponse = await fetch(`${baseUrl}/api/chat/message`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: userMessage,
         conversationId: conversation!.id,
-        visitorId: testVisitorId,
+        visitorId: profile!.id,
         sessionId: testSessionId,
         pageUrl: pageUrl,
         pageTitle: "Test Page",
@@ -103,6 +108,17 @@ export default async function handler(
     });
 
     console.log("🧪 API: Chat API response status:", chatResponse.status);
+    
+    if (!chatResponse.ok) {
+      const chatErrorText = await chatResponse.text();
+      console.error("🧪 API: Chat API error:", chatErrorText);
+      return res.status(500).json({ 
+        error: "Chat API error", 
+        message: `Failed to get AI response: HTTP ${chatResponse.status}`,
+        details: chatErrorText 
+      });
+    }
+
     const chatData = await chatResponse.json();
     console.log("🧪 API: Chat API response data:", chatData);
 
