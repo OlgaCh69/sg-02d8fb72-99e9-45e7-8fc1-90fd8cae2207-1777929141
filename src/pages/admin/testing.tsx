@@ -47,31 +47,21 @@ export default function TestingPage() {
       }
 
       const data = await res.json();
-      console.log("🧪 TEST: Raw API response:", data);
+      console.log("🧪 TEST: Full API response:", data);
       
-      // Analyze the AI response if backend didn't provide metrics
-      const aiText = data.response || data.aiResponse || data.message || "";
-      console.log("🧪 TEST: AI text to analyze:", aiText);
-      console.log("🧪 TEST: AI text length:", aiText.length);
-      
-      const metrics = data.metrics || analyzeResponse(aiText);
-      console.log("🧪 TEST: Calculated metrics:", metrics);
-      
-      const responseObj = {
-        ...data,
-        aiResponse: aiText,
-        metrics,
-        passesRules: data.passesRules ?? (metrics.withinWordLimit && metrics.sentenceStructure && metrics.askedQualifyingQuestions)
-      };
-      console.log("🧪 TEST: Final response object:", responseObj);
-      
-      setResponse(responseObj);
+      // Use the response directly from API - it already has metrics calculated
+      setResponse({
+        aiResponse: data.response,
+        metrics: data.metrics,
+        passesRules: data.passesRules,
+        conversationId: data.conversationId,
+      });
       setHistory(data.messageHistory || []);
       setMessage("");
 
       toast({
         title: "✅ Test Complete",
-        description: "Response analyzed successfully",
+        description: `Response: ${data.metrics?.wordCount || 0} words, ${data.metrics?.sentenceCount || 0} sentences`,
       });
     } catch (error: any) {
       console.error("🧪 TEST: Error:", error);

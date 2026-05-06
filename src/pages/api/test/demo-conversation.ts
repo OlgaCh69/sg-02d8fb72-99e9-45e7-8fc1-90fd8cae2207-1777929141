@@ -139,7 +139,7 @@ export default async function handler(
 
     const responseData = {
       userMessage,
-      aiResponse,
+      response: aiResponse,  // Changed from aiResponse to response
       metrics,
       conversationId: conversation!.id,
       messageHistory: messages?.map((m: any) => ({
